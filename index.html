@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KWANZAPAY - Carteira Digital Angola</title>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+<style>
+/* ========== ESTILOS COMPLETOS ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+.app-container { max-width: 480px; margin: 0 auto; }
+.header {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    color: white;
+}
+.header h1 { font-size: 32px; font-weight: 800; }
+.header p { font-size: 13px; opacity: 0.9; margin-top: 5px; }
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+}
+.card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 10px;
+}
+.input-group { margin-bottom: 18px; }
+label {
+    display: block;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+input, textarea, select {
+    width: 100%;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 15px;
+}
+textarea { resize: vertical; min-height: 60px; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+.btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 8px;
+}
+.btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37,99,235,0.3); }
+.btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+.btn-outline { background: transparent; border: 1px solid #2563eb; color: #2563eb; }
+.btn-outline:hover { background: #eff6ff; }
+.btn-whatsapp { background: linear-gradient(135deg, #25D366, #128C7E); color: white; }
+.btn-call { background: linear-gradient(135deg, #34B7F1, #1DA1F2); color: white; }
+.btn-sm { padding: 6px 12px; font-size: 12px; width: auto; margin-top: 0; }
+.btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+.btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+.saldo-box {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    border: 1px solid #bfdbfe;
+}
+.saldo-label { color: #475569; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+.saldo-valor { font-size: 52px; font-weight: 800; color: #1e3a8a; margin: 10px 0; }
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.action-card {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #e2e8f0;
+}
+.action-card:hover { background: #eff6ff; transform: translateY(-2px); border-color: #2563eb; }
+.action-icon { font-size: 28px; margin-bottom: 8px; }
+.action-label { font-size: 14px; font-weight: 600; color: #1e293b; }
+.hidden { display: none; }
+.back-link { text-align: center; margin-top: 15px; color: #2563eb; cursor: pointer; font-size: 14px; font-weight: 500; }
+.error-msg {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.success-msg {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.user-name { font-weight: 700; color: #1e3a8a; font-size: 16px; }
+.user-phone { font-size: 12px; color: #64748b; }
+.tab-switch { display: flex; gap: 10px; margin-bottom: 20px; }
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 10px;
+    color: #475569;
+    cursor: pointer;
+    font-weight: 600;
+}
+.tab-btn.active { background: #2563eb; color: white; }
+.historico-container { max-height: 350px; overflow-y: auto; }
+.transacao-item, .invest-item, .saque-item, .deposito-item, .chat-message, .global-saque-item {
+    background: #f8fafc;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid #2563eb;
+}
+.buttons-row { display: flex; gap: 12px; margin-top: 12px; }
+.buttons-row button { flex: 1; margin-top: 0; }
+.support-card {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid #bfdbfe;
+}
+.support-number { font-size: 24px; font-weight: 800; color: #1e3a8a; text-align: center; margin: 16px 0; }
+.support-buttons { display: flex; gap: 12px; }
+.deposit-info-card {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+    text-align: center;
+    border: 2px solid #2563eb;
+}
+.copy-btn {
+    background: #eff6ff;
+    border: 1px solid #2563eb;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #1e3a8a;
+    width: auto;
+    font-weight: 500;
+}
+.status-pendente { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 12px; font-size: 11px; display: inline-block; }
+.status-aprovado { background: #d1fae5; color: #059669; padding: 2px 8px; border-radius: 12px; font-size: 11px; display: inline-block; }
+.status-rejeitado { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 12px; font-size: 11px; display: inline-block; }
+.admin-badge {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1e3a8a;
+    padding: 10px 15px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    color: white;
+}
+.admin-badge:hover { background: #2563eb; transform: scale(1.05); }
+.pitch-content {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #334155;
+}
+.pitch-content h3 { color: #1e3a8a; margin: 16px 0 8px; font-size: 18px; }
+.pitch-content .ascii-box {
+    background: #f1f5f9;
+    padding: 12px;
+    border-radius: 12px;
+    font-family: monospace;
+    font-size: 11px;
+    white-space: pre-wrap;
+    margin: 12px 0;
+    border-left: 3px solid #2563eb;
+}
+.progress-bar { background: #e2e8f0; border-radius: 10px; height: 8px; overflow: hidden; margin: 10px 0; }
+.progress-fill { background: #2563eb; height: 100%; border-radius: 10px; transition: width 0.5s; }
+.invest-card-resumo {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid #f59e0b;
+}
+.admin-card {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    position: relative;
+}
+.tab-admin {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+.tab-admin-btn {
+    flex: 1;
+    padding: 8px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.tab-admin-btn.active { background: #2563eb; color: white; }
+.admin-section { display: none; }
+.admin-section.active { display: block; }
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.chat-messages {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+.chat-message {
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 85%;
+    position: relative;
+}
+.chat-message.user {
+    background: #2563eb;
+    color: white;
+    margin-left: auto;
+    border-left: none;
+    border-right: 3px solid #1d4ed8;
+}
+.chat-message.admin {
+    background: #e2e8f0;
+    color: #1e293b;
+    margin-right: auto;
+}
+.chat-message .sender {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    opacity: 0.8;
+}
+.chat-message .text {
+    font-size: 14px;
+    word-wrap: break-word;
+}
+.chat-message .time {
+    font-size: 10px;
+    margin-top: 4px;
+    opacity: 0.6;
+    text-align: right;
+}
+.chat-file {
+    display: inline-block;
+    background: rgba(0,0,0,0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+.chat-file:hover { background: rgba(0,0,0,0.2); }
+.unread-badge {
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    margin-left: 5px;
+}
+.file-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+.file-item {
+    background: #f1f5f9;
+    padding: 8px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+.delete-btn {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    margin-left: 8px;
+}
+.delete-btn:hover { background: #fecaca; }
+.timer-container {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 16px;
+    padding: 12px;
+    margin: 12px 0;
+    text-align: center;
+    border: 2px solid #f59e0b;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+.timer-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #f59e0b;
+    font-weight: 600;
+}
+.timer-digits {
+    font-size: 28px;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    color: #fff;
+    background: #000;
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 20px;
+    margin-top: 5px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 5px #f59e0b;
+}
+.timer-urgent {
+    background: #dc2626;
+    animation: blink 1s infinite;
+}
+@keyframes blink {
+    0%, 100% { background: #dc2626; opacity: 1; }
+    50% { background: #7f1d1d; opacity: 0.8; }
+}
+.timer-warning {
+    background: #f59e0b;
+}
+.timer-normal {
+    background: #059669;
+}
+.invest-card-resumo {
+    transition: all 0.3s;
+}
+.invest-card-resumo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+.whatsapp-row {
+    display: flex;
+    gap: 10px;
+    margin: 12px 0;
+}
+.whatsapp-row .btn {
+    flex: 1;
+    margin-top: 0;
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header"><h1>⚡ KWANZAPAY</h1><p>Sua carteira digital em Angola</p></div>
+
+    <!-- Tela de Autenticação -->
+    <div id="authScreen"><div class="card">
+        <div class="tab-switch"><button class="tab-btn active" onclick="switchAuthTab('login')">🔐 Login</button><button class="tab-btn" onclick="switchAuthTab('register')">📝 Cadastrar</button></div>
+        <div id="errorMsg" class="error-msg hidden"></div>
+        <div id="loginForm">
+            <div class="input-group"><label>📱 Número (Angola)</label><input type="tel" id="loginPhone" placeholder="923456789" maxlength="9"></div>
+            <div class="input-group"><label>🔒 Senha</label><input type="password" id="loginPassword" placeholder="Sua senha"></div>
+            <button class="btn btn-primary" onclick="fazerLogin()">Entrar</button>
+        </div>
+        <div id="registerForm" class="hidden">
+            <div class="input-group"><label>👤 Nome completo</label><input type="text" id="regNome" placeholder="João Manuel Santos"></div>
+            <div class="input-group"><label>📱 Número (Angola)</label><input type="tel" id="regPhone" placeholder="923456789" maxlength="9"></div>
+            <div class="input-group"><label>🔒 Senha (mínimo 4)</label><input type="password" id="regPassword"></div>
+            <div class="input-group"><label>✓ Confirmar senha</label><input type="password" id="regConfirmPassword"></div>
+            <button class="btn btn-primary" onclick="fazerCadastro()">Criar conta</button>
+        </div>
+    </div></div>
+
+    <!-- Botão Admin -->
+    <div class="admin-badge" onclick="verificarSenhaAdmin()">👑 ADMIN</div>
+
+    <!-- Tela Principal -->
+    <div id="appScreen" class="hidden">
+        <div class="card">
+            <div class="user-info"><div><div class="user-name" id="userNameDisplay">...</div><div class="user-phone" id="userPhoneDisplay"></div></div><button class="btn-outline" onclick="logout()" style="width:auto;padding:8px 16px;">Sair</button></div>
+            <div class="saldo-box"><div class="saldo-label">Saldo disponível</div><div class="saldo-valor"><span id="saldoValor">0</span> Kz</div></div>
+            
+            <!-- Grade de funcionalidades -->
+            <div class="actions-grid">
+                <div class="action-card" onclick="showDepositar()"><div class="action-icon">💰</div><div class="action-label">Depositar</div></div>
+                <div class="action-card" onclick="showEnviar()"><div class="action-icon">📤</div><div class="action-label">Enviar</div></div>
+                <div class="action-card" onclick="showInvestir()"><div class="action-icon">📈</div><div class="action-label">Investir</div></div>
+                <div class="action-card" onclick="showSaque()"><div class="action-icon">🏧</div><div class="action-label">Saque IBAN</div></div>
+                <div class="action-card" onclick="showHistorico()"><div class="action-icon">📜</div><div class="action-label">Histórico</div></div>
+                <div class="action-card" onclick="showPerfil()"><div class="action-icon">👤</div><div class="action-label">Perfil</div></div>
+                <div class="action-card" onclick="showSuporte()"><div class="action-icon">🛡️</div><div class="action-label">Suporte</div></div>
+                <div class="action-card" onclick="showPitch()"><div class="action-icon">📊</div><div class="action-label">Pitch</div></div>
+                <div class="action-card" onclick="showChat()"><div class="action-icon">💬</div><div class="action-label">Chat <span id="chatUnreadBadge" class="hidden"></span></div></div>
+            </div>
+
+            <!-- Bloco Meus Investimentos Ativos -->
+            <div class="card-title" style="margin-top:8px;">📈 Meus Investimentos Ativos</div>
+            <div id="resumoInvestimentosAtivos" class="historico-container" style="max-height: 350px;"><div style="text-align:center;color:#64748b;padding:20px">Carregando...</div></div>
+        </div>
+
+        <!-- Painel Depositar -->
+        <div id="depositarPanel" class="card hidden">
+            <div class="card-title">💰 Depositar Saldo</div>
+            <div class="deposit-info-card">
+                <div style="color:#1e3a8a;font-weight:bold;font-size:15px;">💳 Depósito via Multicaixa Express / ATM</div>
+                <div style="font-size:12px;margin:8px 0;">Utilize os dados abaixo:</div>
+                <div style="background:white;border-radius:12px;padding:12px;margin:10px 0;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:600;">🏦 Código Entidade</span><span style="font-family:monospace;font-size:18px;font-weight:800;">10116</span><button class="copy-btn" onclick="copiarTexto('10116')">📋</button></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:600;">🔢 Referência</span><span style="font-family:monospace;font-size:18px;font-weight:800;">949097324</span><button class="copy-btn" onclick="copiarTexto('949097324')">📋</button></div>
+                </div>
+            </div>
+            <div class="input-group"><label>💰 Valor (Kz)</label><input type="number" id="depositoValor" placeholder="Ex: 10000"></div>
+            <div class="input-group"><label>📝 Código da operação</label><input type="text" id="depositoReferencia" placeholder="Código fornecido pelo ATM"></div>
+            
+            <!-- Botão para solicitar depósito via WhatsApp -->
+            <div class="whatsapp-row">
+                <button class="btn btn-whatsapp" onclick="solicitarDepositoWhatsApp()">📱 Solicitar Depósito via WhatsApp</button>
+            </div>
+            <p style="font-size:12px;color:#64748b;text-align:center;margin-top:-5px;margin-bottom:12px;">Ao clicar, será aberto o WhatsApp com os dados preenchidos. Anexe o comprovativo e aguarde a confirmação manual.</p>
+            
+            <div class="card-title" style="margin-top:20px; font-size:18px;">📋 Histórico de Depósitos</div>
+            <div id="historicoDepositosList" class="historico-container"><div style="text-align:center;color:#64748b;padding:20px">Nenhum depósito</div></div>
+            
+            <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
+        </div>
+
+        <!-- Painel Enviar -->
+        <div id="enviarPanel" class="card hidden"><div class="card-title">📤 Enviar dinheiro</div><div class="input-group"><label>Destino (número)</label><input type="tel" id="destinoPhone" placeholder="923456789" maxlength="9"></div><div class="input-group"><label>Valor (Kz)</label><input type="number" id="valorEnvio" placeholder="0"></div><button class="btn btn-primary" onclick="mostrarConfirmacao()">Continuar</button><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
+        <div id="confirmacaoPanel" class="card hidden"><div class="card-title">⚠️ Confirmar transferência</div><div class="confirmacao-box" style="background:#f1f5f9;padding:16px;border-radius:12px"><div style="display:flex;justify-content:space-between;padding:8px 0"><span>Enviar para:</span><span id="confirmDestinoNome">-</span></div><div style="display:flex;justify-content:space-between;padding:8px 0"><span>Valor:</span><span id="confirmValor" style="color:#1e3a8a;font-weight:bold">0 Kz</span></div><div style="display:flex;justify-content:space-between;padding:8px 0"><span>Saldo após:</span><span id="confirmSaldoRestante">-</span></div></div><div class="buttons-row"><button class="btn btn-outline" onclick="fecharConfirmacao()">Cancelar</button><button class="btn btn-primary" onclick="confirmarEnvio()">Confirmar</button></div></div>
+
+        <!-- Painel Saque -->
+        <div id="saquePanel" class="card hidden">
+            <div class="card-title">🏧 Saque para Conta Bancária</div>
+            <div id="ibanConfig" style="background:#f1f5f9;padding:15px;border-radius:12px;margin-bottom:15px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <span style="color:#1e3a8a;font-weight:bold">Conta IBAN</span>
+                    <button class="btn-outline" onclick="editarIBAN()" style="width:auto;padding:6px 12px">✏️ Editar</button>
+                </div>
+                <div id="ibanDisplay" style="color:#475569">Nenhum IBAN cadastrado</div>
+            </div>
+            <div class="input-group"><label>Valor (Kz)</label><input type="number" id="saqueValor" placeholder="Mínimo 1000 Kz"></div>
+            <div class="input-group"><label>Descrição</label><input type="text" id="saqueDesc" placeholder="Ex: Saque conta bancária"></div>
+            <button class="btn btn-primary" onclick="solicitarSaque()">Solicitar Saque</button>
+            
+            <div class="card-title" style="margin-top:20px">📋 Meus Pedidos de Saque</div>
+            <div id="historicoSaquesList" class="historico-container"><div style="text-align:center;color:#64748b;padding:20px">Nenhum saque</div></div>
+            
+            <div class="card-title" style="margin-top:20px; background:#f0f9ff; border-left: 4px solid #2563eb;">🌍 Últimos Saques de Todos Usuários</div>
+            <div id="globalSaquesList" class="historico-container"><div style="text-align:center;color:#64748b;padding:20px">Carregando histórico global...</div></div>
+            
+            <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
+        </div>
+
+        <!-- Painel Investir -->
+        <div id="investirPanel" class="card hidden"><div class="card-title">📈 Investimentos</div><div class="input-group"><label>Valor (Kz)</label><input type="number" id="investValor" placeholder="Mínimo 1000 Kz"></div><div class="input-group"><label>Prazo</label><select id="investPrazo"><option value="21">🎯 3 Semanas - 35%</option><option value="30">🚀 1 Mês - 45%</option><option value="60">💎 2 Meses - 85%</option></select></div><button class="btn btn-primary" onclick="realizarInvestimento()">Investir Agora</button><div class="card-title" style="margin-top:20px">📊 Investimentos Ativos</div><div id="investimentosAtivosList" class="historico-container"><div style="text-align:center;color:#64748b;padding:20px">Nenhum investimento</div></div><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
+
+        <!-- Painel Histórico -->
+        <div id="historicoPanel" class="card hidden"><div class="card-title">📋 Histórico</div><div id="historicoList" class="historico-container"></div><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
+        
+        <!-- Painel Perfil -->
+        <div id="perfilPanel" class="card hidden"><div class="card-title">👤 Meu perfil</div><div id="perfilInfo"></div><div class="card-title" style="margin-top:15px">🏦 Dados Bancários</div><div id="dadosBancarios"></div><button class="btn btn-primary" onclick="showConfigIBAN()">Configurar IBAN</button><button class="btn btn-danger" onclick="logout()" style="margin-top:10px">Sair</button><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
+        
+        <!-- Painel Suporte -->
+        <div id="suportePanel" class="card hidden"><div class="card-title">🛡️ Atendimento</div><div class="support-card"><div class="support-number">949 097 324</div><div class="support-buttons"><button class="btn btn-whatsapp" onclick="window.open('https://wa.me/244949097324','_blank')">💬 WhatsApp</button><button class="btn btn-call" onclick="window.location.href='tel:+244949097324'">📞 Ligar</button></div></div><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
+        
+        <!-- Painel Pitch -->
+        <div id="pitchPanel" class="card hidden"><div class="card-title">📊 Pitch KWANZAPAY</div><div class="pitch-content"><h3>🎤 KWANZAPAY</h3><div class="ascii-box">✅ Abertura de conta em 1 minuto<br>✅ Transferências instantâneas<br>✅ Investimentos até 85% de retorno<br>✅ Saque IBAN com aprovação rápida</div><p style="margin-top:16px;color:#1e3a8a;text-align:center"><strong>KWANZAPAY – O futuro do dinheiro em Angola</strong></p></div><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
+
+        <!-- Painel Chat -->
+        <div id="chatPanel" class="card hidden">
+            <div class="chat-header">
+                <div class="card-title" style="margin-bottom:0;">💬 Suporte KWANZAPAY</div>
+                <button class="btn-outline btn-sm" onclick="hideAllPanels()">✕</button>
+            </div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="input-group"><textarea id="chatMessageInput" placeholder="Digite sua mensagem..." rows="2"></textarea></div>
+            <div class="input-group"><label>📎 Anexar arquivo</label><input type="file" id="chatFileInput" accept=".pdf,.jpg,.png,.jpeg,.txt,.doc,.docx"></div>
+            <div class="buttons-row"><button class="btn btn-primary" onclick="enviarMensagem()">Enviar Mensagem</button></div>
+            <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
+        </div>
+
+        <!-- Modal Configurar IBAN -->
+        <div id="modalIBAN" class="card hidden" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1000;max-width:90%;width:400px"><div class="card-title">🏦 Configurar IBAN</div><div class="input-group"><label>Banco</label><input type="text" id="ibanBanco" placeholder="Ex: BAI"></div><div class="input-group"><label>IBAN</label><input type="text" id="ibanNumero" placeholder="AO06 0000 0000 0000 0000 000"></div><div class="input-group"><label>Titular</label><input type="text" id="ibanTitular" placeholder="Nome completo"></div><div class="buttons-row"><button class="btn btn-outline" onclick="fecharModalIBAN()">Cancelar</button><button class="btn btn-primary" onclick="salvarIBAN()">Salvar</button></div></div>
+
+        <!-- Modal Admin -->
+        <div id="adminModal" class="card hidden" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1001;max-width:95%;width:520px;max-height:85vh;overflow-y:auto"><div class="card-title">👑 Administrador</div>
+            <div class="tab-admin">
+                <button class="tab-admin-btn active" onclick="switchAdminTab('depositos')">📥 Depósitos</button>
+                <button class="tab-admin-btn" onclick="switchAdminTab('saques')">📤 Saques</button>
+                <button class="tab-admin-btn" onclick="switchAdminTab('chat')">💬 Chat</button>
+                <button class="tab-admin-btn" onclick="switchAdminTab('arquivos')">📁 Arquivos</button>
+                <button class="tab-admin-btn" onclick="switchAdminTab('limpar')">🗑️ Limpar</button>
+            </div>
+            <div id="adminDepositosSection" class="admin-section active"></div>
+            <div id="adminSaquesSection" class="admin-section"></div>
+            <div id="adminChatSection" class="admin-section"></div>
+            <div id="adminArquivosSection" class="admin-section"></div>
+            <div id="adminLimparSection" class="admin-section"></div>
+            <button class="btn btn-outline btn-sm" onclick="fecharAdminPanel()" style="margin-top:15px;width:auto;display:block;margin-left:auto;margin-right:auto">Fechar</button>
+        </div>
+        
+        <!-- Modal Visualizar Comprovante -->
+        <div id="modalComprovante" class="card hidden" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1002;max-width:90%;width:400px;max-height:80vh;overflow-y:auto"><div class="card-title">📎 Comprovativo / Arquivo</div><div id="comprovanteConteudo" style="text-align:center;padding:10px"></div><button class="btn btn-outline btn-sm" onclick="fecharModalComprovante()" style="margin-top:15px;width:auto;display:block;margin-left:auto;margin-right:auto">Fechar</button></div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE (NOVO PROJETO)
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyBi3bkN4074Y7o846_xObHiIUmvv1s-B7w",
+  authDomain: "kwanzapayy.firebaseapp.com",
+  databaseURL: "https://kwanzapayy-default-rtdb.firebaseio.com",
+  projectId: "kwanzapayy",
+  storageBucket: "kwanzapayy.firebasestorage.app",
+  messagingSenderId: "350764605895",
+  appId: "1:350764605895:web:ffd6145d768d582594b9e2"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const storage = firebase.storage();
+
+// ============================================================
+//  DADOS GLOBAIS (sincronizados com Firebase)
+// ============================================================
+let usersDB = {};
+let mensagensChat = [];
+let arquivosAdmin = [];
+let currentUser = null;
+let pendingTransfer = null;
+let timerInterval = null;
+const RENDIMENTOS = {21:35, 30:45, 60:85};
+
+// ============================================================
+//  FUNÇÕES DE PERSISTÊNCIA (Firebase)
+// ============================================================
+
+async function loadData() {
+    try {
+        const snapshot = await db.ref().once('value');
+        const data = snapshot.val() || {};
+        usersDB = data.users || {};
+        mensagensChat = data.chat || [];
+        arquivosAdmin = data.arquivosAdmin || [];
+    } catch (error) {
+        console.error('Erro ao carregar dados do Firebase:', error);
+        usersDB = {};
+        mensagensChat = [];
+        arquivosAdmin = [];
+    }
+}
+
+async function saveData() {
+    try {
+        await db.ref('users').set(usersDB);
+        await db.ref('chat').set(mensagensChat);
+        await db.ref('arquivosAdmin').set(arquivosAdmin);
+    } catch (error) {
+        console.error('Erro ao salvar dados no Firebase:', error);
+    }
+}
+
+async function uploadFile(file, path) {
+    if (!file) return null;
+    const ref = storage.ref(path);
+    await ref.put(file);
+    return await ref.getDownloadURL();
+}
+
+async function deleteFile(url) {
+    if (!url) return;
+    try {
+        const ref = storage.refFromURL(url);
+        await ref.delete();
+    } catch (e) {
+        console.warn('Erro ao excluir arquivo:', e);
+    }
+}
+
+// ============================================================
+//  FUNÇÕES AUXILIARES
+// ============================================================
+function normalizePhone(phone) {
+    let cleaned = phone.toString().replace(/\D/g, '');
+    if(cleaned.startsWith('244')) cleaned = cleaned.substring(3);
+    if(cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    if(cleaned.length === 9 && cleaned.startsWith('9')) return cleaned;
+    return null;
+}
+
+function showErrorApp(msg) { let d=document.createElement('div'); d.className='error-msg'; d.textContent=msg; document.getElementById('appScreen').prepend(d); setTimeout(()=>d.remove(),3000); }
+function showSuccessApp(msg) { let d=document.createElement('div'); d.className='success-msg'; d.textContent=msg; document.getElementById('appScreen').prepend(d); setTimeout(()=>d.remove(),3000); }
+function showError(msg) { let div=document.getElementById('errorMsg'); div.textContent=msg; div.classList.remove('hidden'); setTimeout(()=>div.classList.add('hidden'),3000); }
+function copiarTexto(texto) { navigator.clipboard.writeText(texto); showSuccessApp("✅ Copiado!"); }
+
+function atualizarSaldo() { if(currentUser && usersDB[currentUser]) document.getElementById('saldoValor').innerText = usersDB[currentUser].saldo.toLocaleString('pt-AO'); }
+
+function hideAllPanels() {
+    const panels = ['depositarPanel','enviarPanel','confirmacaoPanel','investirPanel','saquePanel','historicoPanel','perfilPanel','suportePanel','pitchPanel','modalIBAN','adminModal','modalComprovante','chatPanel'];
+    panels.forEach(p=>{ let el=document.getElementById(p); if(el) el.classList.add('hidden'); });
+}
+
+function switchAuthTab(tab) {
+    let login=document.getElementById('loginForm'), reg=document.getElementById('registerForm'), btns=document.querySelectorAll('.tab-btn');
+    if(tab==='login'){ login.classList.remove('hidden'); reg.classList.add('hidden'); btns[0].classList.add('active'); btns[1].classList.remove('active'); }
+    else { login.classList.add('hidden'); reg.classList.remove('hidden'); btns[0].classList.remove('active'); btns[1].classList.add('active'); }
+}
+
+function logout() { 
+    if(timerInterval) clearInterval(timerInterval);
+    currentUser=null; 
+    document.getElementById('appScreen').classList.add('hidden'); 
+    document.getElementById('authScreen').classList.remove('hidden'); 
+    hideAllPanels(); 
+    switchAuthTab('login'); 
+}
+
+// ============================================================
+//  FUNÇÃO PARA SOLICITAR DEPÓSITO VIA WHATSAPP (COM REGISTO PENDENTE)
+// ============================================================
+async function solicitarDepositoWhatsApp() {
+    if (!currentUser) {
+        showErrorApp('Faça login primeiro');
+        return;
+    }
+    const user = usersDB[currentUser];
+    const valor = parseInt(document.getElementById('depositoValor').value);
+    const referencia = document.getElementById('depositoReferencia').value.trim();
+    
+    // Validar campos
+    if (!valor || valor < 100) {
+        showErrorApp('Preencha o valor (mínimo 100 Kz)');
+        return;
+    }
+    if (!referencia) {
+        showErrorApp('Preencha o código da operação');
+        return;
+    }
+    
+    // Criar registo de depósito pendente
+    const depositoId = Date.now();
+    const novoDeposito = {
+        id: depositoId,
+        valor: valor,
+        referencia: referencia,
+        data: new Date().toISOString(),
+        status: 'pendente',
+        hasComprovante: false  // não há upload, apenas WhatsApp
+    };
+    
+    if (!user.depositos) user.depositos = [];
+    user.depositos.push(novoDeposito);
+    await saveData();
+    
+    // Número de WhatsApp do suporte (sem +)
+    const numeroSuporte = '244949097324';
+    // Mensagem personalizada
+    const mensagem = `Olá, sou ${user.nome} (${user.phone}), solicito depósito de ${valor.toLocaleString('pt-AO')} Kz. Código da operação: ${referencia}. Segue em anexo o comprovativo.`;
+    const url = `https://wa.me/${numeroSuporte}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, '_blank');
+    
+    // Limpar campos
+    document.getElementById('depositoValor').value = '';
+    document.getElementById('depositoReferencia').value = '';
+    
+    // Atualizar histórico de depósitos
+    renderizarHistoricoDepositos();
+    showSuccessApp('✅ Pedido enviado! Aguarde a confirmação manual.');
+}
+
+// ============================================================
+//  RENDERIZAÇÃO DO HISTÓRICO DE DEPÓSITOS (UTILIZADOR)
+// ============================================================
+function renderizarHistoricoDepositos() {
+    const user = usersDB[currentUser];
+    const container = document.getElementById('historicoDepositosList');
+    if (!user || !user.depositos || user.depositos.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Nenhum depósito solicitado</div>';
+        return;
+    }
+    container.innerHTML = '';
+    // Mostrar do mais recente para o mais antigo
+    const depositosOrdenados = [...user.depositos].reverse();
+    depositosOrdenados.forEach(dep => {
+        const div = document.createElement('div');
+        div.className = 'deposito-item';
+        const statusClass = dep.status === 'aprovado' ? 'status-aprovado' : 
+                           (dep.status === 'pendente' ? 'status-pendente' : 'status-rejeitado');
+        const statusText = dep.status === 'aprovado' ? '✅ Aprovado' : 
+                           (dep.status === 'pendente' ? '⏳ Pendente' : '❌ Rejeitado');
+        div.innerHTML = `
+            <div><strong>${dep.valor.toLocaleString('pt-AO')} Kz</strong></div>
+            <div>📝 ${dep.referencia}</div>
+            <div>📅 ${new Date(dep.data).toLocaleString()}</div>
+            <div><span class="${statusClass}">${statusText}</span></div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// ============================================================
+//  ADMIN - DEPÓSITOS PENDENTES (COM APROVAÇÃO/REJEIÇÃO)
+// ============================================================
+function renderizarAdminDepositos() {
+    const container = document.getElementById('adminDepositosSection');
+    if (!container) return;
+    
+    let deposPendentes = [];
+    for (let phone in usersDB) {
+        const user = usersDB[phone];
+        if (user.depositos) {
+            user.depositos.forEach(dep => {
+                if (dep.status === 'pendente') {
+                    deposPendentes.push({
+                        ...dep,
+                        usuarioNome: user.nome,
+                        usuarioPhone: phone
+                    });
+                }
+            });
+        }
+    }
+    
+    if (deposPendentes.length === 0) {
+        container.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">Nenhum depósito pendente</div>';
+        return;
+    }
+    
+    let html = '';
+    deposPendentes.forEach(dep => {
+        html += `
+            <div class="admin-card">
+                <div><strong>👤 ${dep.usuarioNome}</strong> (${dep.usuarioPhone})</div>
+                <div>💰 ${dep.valor.toLocaleString('pt-AO')} Kz</div>
+                <div>📝 Ref: ${dep.referencia}</div>
+                <div>📅 ${new Date(dep.data).toLocaleString()}</div>
+                <div style="font-size:12px; color:#64748b; margin-top:4px;">📎 Comprovativo enviado via WhatsApp</div>
+                <div class="buttons-row" style="margin-top:12px;">
+                    <button class="btn btn-success btn-sm" onclick="aprovarDepositoAdmin('${dep.usuarioPhone}', ${dep.id}, ${dep.valor})">✅ Aprovar</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejeitarDepositoAdmin('${dep.usuarioPhone}', ${dep.id})">❌ Rejeitar</button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+async function aprovarDepositoAdmin(phone, id, valor) {
+    const user = usersDB[phone];
+    if (!user) return;
+    const dep = user.depositos.find(d => d.id === id);
+    if (!dep || dep.status !== 'pendente') return;
+    
+    dep.status = 'aprovado';
+    user.saldo += valor;
+    if (!user.historico) user.historico = [];
+    user.historico.push({
+        tipo: "recebido",
+        valor: valor,
+        descricao: `Depósito aprovado de ${valor.toLocaleString('pt-AO')} Kz - Ref: ${dep.referencia}`,
+        data: new Date().toISOString()
+    });
+    await saveData();
+    
+    // Atualizar interfaces
+    renderizarAdminDepositos();
+    if (currentUser === phone) {
+        atualizarSaldo();
+        renderizarHistoricoDepositos();
+        showSuccessApp(`✅ Depósito de ${valor.toLocaleString('pt-AO')} Kz aprovado!`);
+    }
+    alert(`✅ Depósito de ${valor.toLocaleString('pt-AO')} Kz aprovado para ${user.nome}`);
+}
+
+async function rejeitarDepositoAdmin(phone, id) {
+    const user = usersDB[phone];
+    if (!user) return;
+    const dep = user.depositos.find(d => d.id === id);
+    if (!dep || dep.status !== 'pendente') return;
+    
+    dep.status = 'rejeitado';
+    await saveData();
+    
+    renderizarAdminDepositos();
+    if (currentUser === phone) {
+        renderizarHistoricoDepositos();
+        showSuccessApp(`❌ Depósito rejeitado.`);
+    }
+    alert(`❌ Depósito rejeitado para ${user.nome}`);
+}
+
+// ============================================================
+//  ADMIN - SAQUES (já existente)
+// ============================================================
+function renderizarAdminSaques() {
+    let saquesPend = [];
+    for(let phone in usersDB) {
+        const u = usersDB[phone];
+        if(u.saques) u.saques.forEach(s=>{ 
+            if(s.status==='pendente') {
+                saquesPend.push({...s, usuarioNome:u.nome, usuarioPhone:phone});
+            }
+        });
+    }
+    let html = '';
+    if(saquesPend.length===0) html += '<div style="color:#64748b;padding:20px;text-align:center">Nenhum saque pendente</div>';
+    else {
+        saquesPend.forEach(s => {
+            html += `<div class="admin-card">
+                <div><strong>👤 ${s.usuarioNome}</strong> (${s.usuarioPhone})</div>
+                <div>🏦 ${s.iban?.banco || 'N/A'} - ${s.iban?.numero || 'N/A'}</div>
+                <div>💰 ${s.valor.toLocaleString('pt-AO')} Kz</div>
+                <div>📝 ${s.descricao || 'Saque bancário'}</div>
+                <div>📅 ${new Date(s.data).toLocaleString()}</div>
+                <div class="buttons-row" style="margin-top:12px;">
+                    <button class="btn btn-success btn-sm" onclick="aprovarSaqueAdmin('${s.usuarioPhone}',${s.id},${s.valor})">✅ Aprovar</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejeitarSaqueAdmin('${s.usuarioPhone}',${s.id})">❌ Rejeitar</button>
+                </div>
+            </div>`;
+        });
+    }
+    document.getElementById('adminSaquesSection').innerHTML = html;
+}
+
+async function aprovarSaqueAdmin(phone, id, valor){
+    const user = usersDB[phone];
+    const saq = user.saques.find(s=>s.id===id);
+    if(saq && saq.status==='pendente'){
+        if(user.saldo < valor){ 
+            alert(`❌ Saldo insuficiente para ${user.nome}! Saque rejeitado automaticamente.`); 
+            saq.status='rejeitado'; 
+            await saveData(); 
+            renderizarAdminSaques();
+            renderizarGlobalSaques();
+            return; 
+        }
+        saq.status = 'aprovado';
+        user.saldo -= valor;
+        if(!user.historico) user.historico = [];
+        user.historico.push({tipo:"enviado", valor, descricao:`Saque aprovado de ${valor.toLocaleString('pt-AO')} Kz para ${saq.iban?.banco || 'conta bancária'}`, data:new Date().toISOString()});
+        await saveData();
+        if(currentUser === phone) { atualizarSaldo(); renderizarHistoricoSaques(); }
+        renderizarAdminSaques();
+        renderizarGlobalSaques();
+        alert(`✅ Saque de ${valor.toLocaleString('pt-AO')} Kz aprovado para ${user.nome}`);
+        if(currentUser === phone) showSuccessApp(`Saque aprovado! -${valor.toLocaleString('pt-AO')} Kz`);
+    }
+}
+
+async function rejeitarSaqueAdmin(phone, id){
+    const user = usersDB[phone];
+    const saq = user.saques.find(s=>s.id===id);
+    if(saq && saq.status==='pendente'){ 
+        saq.status = 'rejeitado'; 
+        await saveData(); 
+        renderizarAdminSaques();
+        renderizarGlobalSaques();
+        alert(`❌ Saque rejeitado para ${user.nome}`);
+    }
+}
+
+// ============================================================
+//  RENDERIZAÇÃO GLOBAL DE SAQUES
+// ============================================================
+function renderizarGlobalSaques() {
+    const container = document.getElementById('globalSaquesList');
+    if(!container) return;
+    let todosSaques = [];
+    for(let phone in usersDB) {
+        const user = usersDB[phone];
+        if(user.saques && user.saques.length > 0) {
+            user.saques.forEach(saq => {
+                todosSaques.push({...saq, usuarioNome: user.nome, usuarioPhone: phone});
+            });
+        }
+    }
+    if(todosSaques.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Nenhum saque registrado no sistema</div>';
+        return;
+    }
+    todosSaques.sort((a,b) => new Date(b.data) - new Date(a.data));
+    container.innerHTML = '';
+    todosSaques.slice(0, 15).forEach(saq => {
+        const div = document.createElement('div');
+        div.className = 'global-saque-item';
+        const statusClass = saq.status==='aprovado' ? 'status-aprovado' : (saq.status==='pendente' ? 'status-pendente' : 'status-rejeitado');
+        const statusText = saq.status==='aprovado' ? '✅ Aprovado' : (saq.status==='pendente' ? '⏳ Pendente' : '❌ Rejeitado');
+        div.innerHTML = `
+            <div><strong>👤 ${saq.usuarioNome}</strong></div>
+            <div>💰 ${saq.valor.toLocaleString('pt-AO')} Kz</div>
+            <div>🏦 ${saq.iban?.banco || 'N/A'}</div>
+            <div>📝 ${saq.descricao || 'Saque bancário'}</div>
+            <div>📅 ${new Date(saq.data).toLocaleString()}</div>
+            <div><span class="${statusClass}">${statusText}</span></div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// ============================================================
+//  CONTAGEM REGRESSIVA COM SEGUNDOS
+// ============================================================
+function formatarTempo(dias, horas, minutos, segundos) {
+    return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+}
+function getTimerClass(diasRestantes) {
+    if(diasRestantes <= 0) return 'timer-urgent';
+    if(diasRestantes <= 3) return 'timer-warning';
+    return 'timer-normal';
+}
+function criarTimerElemento(investimento) {
+    const dataResgate = new Date(investimento.dataResgate);
+    const agora = new Date();
+    const diffMs = dataResgate - agora;
+    if(diffMs <= 0) {
+        return `<div class="timer-container timer-urgent">
+                    <div class="timer-label">⏰ FINALIZADO!</div>
+                    <div class="timer-digits">0d 0h 0m 0s</div>
+                </div>`;
+    }
+    const dias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const horas = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const segundos = Math.floor((diffMs % (1000 * 60)) / 1000);
+    const tempoTexto = formatarTempo(dias, horas, minutos, segundos);
+    const timerClass = getTimerClass(dias);
+    let icone = '⏳';
+    if(dias <= 0) icone = '🔔';
+    else if(dias <= 3) icone = '⚠️';
+    else if(dias <= 7) icone = '⏰';
+    return `<div class="timer-container ${timerClass}">
+                <div class="timer-label">${icone} TEMPO RESTANTE ${icone}</div>
+                <div class="timer-digits">${tempoTexto}</div>
+                ${dias <= 3 && dias > 0 ? '<div style="font-size:10px;color:#f59e0b;margin-top:5px;">🔥 ÚLTIMOS DIAS! 🔥</div>' : ''}
+            </div>`;
+}
+
+// ============================================================
+//  CHAT (com Firebase Storage)
+// ============================================================
+function showChat() {
+    hideAllPanels();
+    document.getElementById('chatPanel').classList.remove('hidden');
+    renderizarChat();
+    marcarMensagensComoLidas();
+}
+
+function renderizarChat() {
+    const container = document.getElementById('chatMessages');
+    if(!container) return;
+    const userMessages = mensagensChat.filter(msg => msg.usuario === currentUser || (msg.usuario === 'admin' && msg.usuarioDestino === currentUser));
+    if(userMessages.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#64748b;padding:40px">Nenhuma mensagem. Envie uma mensagem para o suporte!</div>';
+        return;
+    }
+    container.innerHTML = '';
+    userMessages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `chat-message ${msg.usuario === 'admin' ? 'admin' : 'user'}`;
+        const senderName = msg.usuario === 'admin' ? '👑 Suporte KWANZAPAY' : (usersDB[msg.usuario]?.nome || msg.usuario);
+        let fileHtml = '';
+        if(msg.arquivoURL) {
+            fileHtml = `<div class="chat-file" onclick="visualizarArquivoChat('${msg.id}')">📎 ${msg.nomeArquivo || 'Arquivo anexado'}</div>`;
+        }
+        div.innerHTML = `
+            <div class="sender">${senderName}</div>
+            <div class="text">${msg.texto}</div>
+            ${fileHtml}
+            <div class="time">${new Date(msg.data).toLocaleString()}</div>
+        `;
+        container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+}
+
+function marcarMensagensComoLidas() {
+    if(!currentUser) return;
+    let hasUnread = false;
+    mensagensChat.forEach(msg => {
+        if(msg.usuario === 'admin' && msg.usuarioDestino === currentUser && !msg.lido) {
+            msg.lido = true;
+            hasUnread = true;
+        }
+    });
+    if(hasUnread) {
+        saveData();
+        atualizarBadgeChat();
+    }
+}
+
+function atualizarBadgeChat() {
+    if(!currentUser) return;
+    const unreadCount = mensagensChat.filter(msg => msg.usuario === 'admin' && msg.usuarioDestino === currentUser && !msg.lido).length;
+    const badge = document.getElementById('chatUnreadBadge');
+    if(unreadCount > 0) {
+        badge.textContent = unreadCount;
+        badge.classList.remove('hidden');
+        badge.classList.add('unread-badge');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+async function enviarMensagem() {
+    const texto = document.getElementById('chatMessageInput').value.trim();
+    const fileInput = document.getElementById('chatFileInput');
+    const arquivo = fileInput.files[0];
+    if(!texto && !arquivo) {
+        showErrorApp('Digite uma mensagem ou anexe um arquivo');
+        return;
+    }
+    const mensagemId = Date.now();
+    let arquivoURL = null, nomeArquivo = null;
+    if(arquivo) {
+        try {
+            const path = `chat/${mensagemId}_${arquivo.name}`;
+            arquivoURL = await uploadFile(arquivo, path);
+            nomeArquivo = arquivo.name;
+        } catch(e) {
+            showErrorApp('Erro ao enviar arquivo: '+e.message);
+            return;
+        }
+    }
+    const novaMsg = {
+        id: mensagemId,
+        usuario: currentUser,
+        usuarioDestino: 'admin',
+        texto: texto || '📎 Arquivo anexado',
+        arquivoURL: arquivoURL,
+        nomeArquivo: nomeArquivo,
+        data: new Date().toISOString(),
+        lido: false
+    };
+    mensagensChat.push(novaMsg);
+    await saveData();
+    document.getElementById('chatMessageInput').value = '';
+    fileInput.value = '';
+    renderizarChat();
+    showSuccessApp('✅ Mensagem enviada para o suporte!');
+    if(document.getElementById('adminModal') && !document.getElementById('adminModal').classList.contains('hidden')) {
+        renderizarAdminChat();
+    }
+}
+
+function visualizarArquivoChat(msgId) {
+    const msg = mensagensChat.find(m => m.id == msgId);
+    if(msg && msg.arquivoURL) {
+        abrirModalArquivo(msg.arquivoURL, msg.nomeArquivo);
+    } else {
+        alert('Arquivo não disponível');
+    }
+}
+
+function abrirModalArquivo(url, nomeArquivo) {
+    const modal = document.getElementById('modalComprovante');
+    const container = document.getElementById('comprovanteConteudo');
+    if(!modal || !container) return;
+    if(url) {
+        const ext = url.split('.').pop().toLowerCase();
+        if(['jpg','jpeg','png','gif','webp'].includes(ext)) {
+            container.innerHTML = `<img src="${url}" style="max-width:100%; border-radius:12px;">`;
+        } else if(ext === 'pdf') {
+            container.innerHTML = `<iframe src="${url}" style="width:100%; height:400px; border:none;"></iframe>`;
+        } else {
+            container.innerHTML = `<div style="padding:20px;text-align:center"><a href="${url}" download="${nomeArquivo || 'arquivo'}" class="btn btn-primary">📥 Baixar ${nomeArquivo || 'arquivo'}</a></div>`;
+        }
+        modal.classList.remove('hidden');
+    }
+}
+
+// ============================================================
+//  ADMIN (com Firebase Storage para arquivos) - CHAT E ARQUIVOS
+// ============================================================
+function renderizarAdminChat() {
+    const container = document.getElementById('adminChatSection');
+    if(!container) return;
+    const conversas = new Map();
+    mensagensChat.forEach(msg => {
+        const outroUsuario = msg.usuario === 'admin' ? msg.usuarioDestino : msg.usuario;
+        if(outroUsuario && outroUsuario !== 'admin') {
+            if(!conversas.has(outroUsuario)) conversas.set(outroUsuario, []);
+            conversas.get(outroUsuario).push(msg);
+        }
+    });
+    if(conversas.size === 0) {
+        container.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">Nenhuma conversa ainda</div>';
+        return;
+    }
+    let html = '';
+    for(let [phone, mensagens] of conversas) {
+        const user = usersDB[phone];
+        const nomeUser = user?.nome || phone;
+        const ultimaMsg = mensagens[mensagens.length - 1];
+        const naoLidas = mensagens.filter(m => m.usuario === phone && !m.lido).length;
+        html += `
+            <div class="admin-card">
+                <div><strong>👤 ${nomeUser}</strong> (${phone})</div>
+                <div style="font-size:12px;color:#64748b;margin-top:5px;">💬 ${ultimaMsg.texto ? ultimaMsg.texto.substring(0,50) : 'Arquivo'}</div>
+                ${naoLidas > 0 ? `<div style="margin-top:5px;"><span class="status-pendente">${naoLidas} nova(s)</span></div>` : ''}
+                <div style="margin-top:10px;display:flex;gap:8px;">
+                    <button class="btn-outline btn-sm" onclick="abrirConversaAdmin('${phone}')">💬 Responder</button>
+                    <button class="btn-danger btn-sm" onclick="apagarConversaAdmin('${phone}')">🗑️ Apagar</button>
+                </div>
+            </div>
+        `;
+    }
+    container.innerHTML = html;
+}
+
+function apagarConversaAdmin(phone) {
+    if(confirm(`⚠️ Tem certeza que deseja apagar TODAS as mensagens da conversa com ${phone}?`)) {
+        mensagensChat = mensagensChat.filter(msg => 
+            !( (msg.usuario === 'admin' && msg.usuarioDestino === phone) || 
+               (msg.usuario === phone && msg.usuarioDestino === 'admin') )
+        );
+        arquivosAdmin = arquivosAdmin.filter(a => a.usuarioDestino !== phone);
+        saveData();
+        renderizarAdminChat();
+        renderizarAdminArquivos();
+        if(currentUser === phone) {
+            atualizarBadgeChat();
+            if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) renderizarChat();
+        }
+        showSuccessApp(`✅ Conversa com ${usersDB[phone]?.nome || phone} apagada!`);
+    }
+}
+
+function abrirConversaAdmin(phone) {
+    const user = usersDB[phone];
+    const nomeUser = user?.nome || phone;
+    const mensagensConversa = mensagensChat.filter(msg => 
+        (msg.usuario === phone && msg.usuarioDestino === 'admin') || 
+        (msg.usuario === 'admin' && msg.usuarioDestino === phone)
+    );
+    let mensagensHtml = '<div style="max-height:200px;overflow-y:auto;margin-bottom:10px;background:#f8fafc;padding:10px;border-radius:10px;">';
+    mensagensConversa.slice(-5).forEach(msg => {
+        const remetente = msg.usuario === 'admin' ? 'Admin' : nomeUser;
+        mensagensHtml += `<div style="font-size:11px;padding:4px;border-bottom:1px solid #e2e8f0;"><strong>${remetente}:</strong> ${msg.texto ? msg.texto.substring(0,50) : 'Arquivo'}</div>`;
+    });
+    mensagensHtml += '</div>';
+    const modalHtml = `
+        <div id="adminReplyModal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;background:white;border-radius:20px;padding:20px;width:90%;max-width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+            <h3>Responder para ${nomeUser}</h3>
+            ${mensagensHtml}
+            <textarea id="adminReplyText" rows="3" style="width:100%;padding:10px;margin:10px 0;border:1px solid #cbd5e1;border-radius:10px;" placeholder="Digite sua resposta..."></textarea>
+            <div class="input-group"><label>📎 Anexar arquivo (opcional)</label><input type="file" id="adminReplyFile" accept=".pdf,.jpg,.png,.jpeg,.txt,.doc,.docx"></div>
+            <div class="buttons-row">
+                <button class="btn btn-outline" onclick="fecharAdminReply()">Cancelar</button>
+                <button class="btn btn-primary" onclick="enviarRespostaAdmin('${phone}')">Enviar</button>
+            </div>
+        </div>
+        <div id="adminReplyOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1999;"></div>
+    `;
+    const oldModal = document.getElementById('adminReplyModal');
+    const oldOverlay = document.getElementById('adminReplyOverlay');
+    if(oldModal) oldModal.remove();
+    if(oldOverlay) oldOverlay.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function fecharAdminReply() {
+    const modal = document.getElementById('adminReplyModal');
+    const overlay = document.getElementById('adminReplyOverlay');
+    if(modal) modal.remove();
+    if(overlay) overlay.remove();
+}
+
+async function enviarRespostaAdmin(phone) {
+    const texto = document.getElementById('adminReplyText').value.trim();
+    const fileInput = document.getElementById('adminReplyFile');
+    const arquivo = fileInput.files[0];
+    if(!texto && !arquivo) {
+        alert('Digite uma mensagem ou anexe um arquivo');
+        return;
+    }
+    const mensagemId = Date.now();
+    let arquivoURL = null, nomeArquivo = null;
+    if(arquivo) {
+        try {
+            const path = `chat/admin_${mensagemId}_${arquivo.name}`;
+            arquivoURL = await uploadFile(arquivo, path);
+            nomeArquivo = arquivo.name;
+        } catch(e) {
+            alert('Erro ao enviar arquivo: '+e.message);
+            return;
+        }
+    }
+    mensagensChat.push({
+        id: mensagemId,
+        usuario: 'admin',
+        usuarioDestino: phone,
+        texto: texto || '📎 Arquivo enviado pelo suporte',
+        arquivoURL: arquivoURL,
+        nomeArquivo: nomeArquivo,
+        data: new Date().toISOString(),
+        lido: false
+    });
+    await saveData();
+    fecharAdminReply();
+    renderizarAdminChat();
+    if(currentUser === phone) {
+        atualizarBadgeChat();
+        if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) renderizarChat();
+        showSuccessApp(`📨 Nova mensagem do suporte!`);
+    }
+    showSuccessApp(`✅ Resposta enviada para ${usersDB[phone]?.nome || phone}`);
+}
+
+function renderizarAdminArquivos() {
+    const container = document.getElementById('adminArquivosSection');
+    if(!container) return;
+    let usuariosList = '';
+    for(let phone in usersDB) {
+        const user = usersDB[phone];
+        usuariosList += `<option value="${phone}">${user.nome} (${phone})</option>`;
+    }
+    container.innerHTML = `
+        <div class="card-title" style="font-size:18px;margin-bottom:15px;">📤 Enviar Arquivo para Usuário</div>
+        <div class="input-group">
+            <label>Selecionar Usuário</label>
+            <select id="adminSelectUser">${usuariosList}</select>
+        </div>
+        <div class="input-group">
+            <label>Mensagem (opcional)</label>
+            <textarea id="adminFileMessage" rows="2" placeholder="Descreva o arquivo..."></textarea>
+        </div>
+        <div class="input-group">
+            <label>📎 Arquivo (PDF, Imagem, Documento)</label>
+            <input type="file" id="adminFileUpload" accept=".pdf,.jpg,.png,.jpeg,.txt,.doc,.docx,.xls,.xlsx">
+        </div>
+        <button class="btn btn-primary" onclick="enviarArquivoAdmin()">📤 Enviar Arquivo</button>
+        
+        <div class="card-title" style="font-size:18px;margin:20px 0 15px;">📋 Arquivos Enviados</div>
+        <div id="adminArquivosLista" class="file-list"></div>
+    `;
+    carregarListaArquivosAdmin();
+}
+
+function carregarListaArquivosAdmin() {
+    const container = document.getElementById('adminArquivosLista');
+    if(!container) return;
+    if(arquivosAdmin.length === 0) {
+        container.innerHTML = '<div style="color:#64748b;padding:10px;text-align:center">Nenhum arquivo enviado ainda</div>';
+        return;
+    }
+    container.innerHTML = '';
+    arquivosAdmin.slice().reverse().forEach(arquivo => {
+        const userDestino = usersDB[arquivo.usuarioDestino];
+        const nomeDestino = userDestino ? `${userDestino.nome} (${arquivo.usuarioDestino})` : arquivo.usuarioDestino;
+        const div = document.createElement('div');
+        div.className = 'file-item';
+        div.innerHTML = `
+            <div style="flex:1;">
+                <strong>${arquivo.nomeArquivo}</strong><br>
+                <small>Para: ${nomeDestino}</small><br>
+                <small>📅 ${new Date(arquivo.data).toLocaleString()}</small>
+                ${arquivo.mensagem ? `<br><small>💬 ${arquivo.mensagem.substring(0,50)}</small>` : ''}
+            </div>
+            <div style="display:flex;gap:5px;">
+                <button class="btn-outline btn-sm" onclick="visualizarArquivoAdmin('${arquivo.id}')">👁️ Ver</button>
+                <button class="delete-btn" onclick="apagarArquivoAdmin('${arquivo.id}')">🗑️</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function enviarArquivoAdmin() {
+    const selectUser = document.getElementById('adminSelectUser');
+    const usuarioDestino = selectUser.value;
+    const mensagem = document.getElementById('adminFileMessage').value.trim();
+    const fileInput = document.getElementById('adminFileUpload');
+    const arquivo = fileInput.files[0];
+    if(!usuarioDestino) { alert('Selecione um usuário'); return; }
+    if(!arquivo) { alert('Selecione um arquivo para enviar'); return; }
+    const userDestino = usersDB[usuarioDestino];
+    if(!userDestino) { alert('Usuário não encontrado'); return; }
+    
+    const arquivoId = Date.now();
+    let arquivoURL = null;
+    try {
+        const path = `admin/${arquivoId}_${arquivo.name}`;
+        arquivoURL = await uploadFile(arquivo, path);
+    } catch(e) {
+        alert('Erro ao enviar arquivo: '+e.message);
+        return;
+    }
+    
+    arquivosAdmin.push({
+        id: arquivoId,
+        usuarioDestino: usuarioDestino,
+        nomeArquivo: arquivo.name,
+        arquivoURL: arquivoURL,
+        mensagem: mensagem,
+        data: new Date().toISOString()
+    });
+    
+    mensagensChat.push({
+        id: arquivoId,
+        usuario: 'admin',
+        usuarioDestino: usuarioDestino,
+        texto: mensagem || `📎 ${arquivo.name} (enviado pelo suporte)`,
+        arquivoURL: arquivoURL,
+        nomeArquivo: arquivo.name,
+        data: new Date().toISOString(),
+        lido: false
+    });
+    
+    await saveData();
+    document.getElementById('adminFileMessage').value = '';
+    fileInput.value = '';
+    carregarListaArquivosAdmin();
+    renderizarAdminChat();
+    if(currentUser === usuarioDestino) {
+        atualizarBadgeChat();
+        if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) renderizarChat();
+        showSuccessApp(`📨 Novo arquivo recebido do suporte: ${arquivo.name}`);
+    }
+    showSuccessApp(`✅ Arquivo enviado para ${userDestino.nome}!`);
+}
+
+function visualizarArquivoAdmin(arquivoId) {
+    const arquivo = arquivosAdmin.find(a => a.id == arquivoId);
+    if(arquivo && arquivo.arquivoURL) {
+        abrirModalArquivo(arquivo.arquivoURL, arquivo.nomeArquivo);
+    } else {
+        alert('Arquivo não encontrado');
+    }
+}
+
+async function apagarArquivoAdmin(arquivoId) {
+    if(confirm('⚠️ Tem certeza que deseja apagar este arquivo permanentemente?')) {
+        const arquivo = arquivosAdmin.find(a => a.id == arquivoId);
+        if(arquivo && arquivo.arquivoURL) {
+            try { await deleteFile(arquivo.arquivoURL); } catch(e) {}
+        }
+        arquivosAdmin = arquivosAdmin.filter(a => a.id !== arquivoId);
+        mensagensChat = mensagensChat.filter(m => m.id !== arquivoId);
+        await saveData();
+        carregarListaArquivosAdmin();
+        renderizarAdminChat();
+        showSuccessApp('✅ Arquivo apagado!');
+    }
+}
+
+function renderizarAdminLimpar() {
+    const container = document.getElementById('adminLimparSection');
+    if(!container) return;
+    container.innerHTML = `
+        <div class="card-title" style="font-size:18px;margin-bottom:15px;color:#dc2626;">🗑️ ÁREA DE LIMPEZA</div>
+        <div class="admin-card" style="border-left-color:#f59e0b;">
+            <strong>📨 Apagar mensagens do administrador</strong>
+            <p style="font-size:12px;color:#64748b;margin:10px 0;">Remove todas as mensagens enviadas pelo admin no chat.</p>
+            <button class="btn btn-warning" onclick="apagarTodasMensagensAdmin()">🗑️ Apagar Mensagens do Admin</button>
+        </div>
+        <div class="admin-card" style="border-left-color:#ef4444;">
+            <strong>⚠️ RESET COMPLETO DO SISTEMA</strong>
+            <p style="font-size:12px;color:#64748b;margin:10px 0;">Remove TODOS os dados: usuários, transações, mensagens, arquivos.</p>
+            <button class="btn btn-danger" onclick="apagarHistoricoCompleto()">🔥 RESETAR TUDO</button>
+        </div>
+    `;
+}
+
+async function apagarTodasMensagensAdmin() {
+    if(confirm('⚠️ Apagar TODAS as mensagens enviadas pelo administrador?')) {
+        mensagensChat = mensagensChat.filter(msg => msg.usuario !== 'admin');
+        arquivosAdmin = [];
+        await saveData();
+        renderizarAdminChat();
+        renderizarAdminArquivos();
+        if(currentUser && document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) renderizarChat();
+        showSuccessApp('✅ Todas as mensagens do admin foram apagadas!');
+    }
+}
+
+async function apagarHistoricoCompleto() {
+    if(confirm('⚠️⚠️⚠️ Isso irá apagar TODOS os dados!')) {
+        const confirm2 = prompt('Digite "APAGAR TUDO" para confirmar:');
+        if(confirm2 === 'APAGAR TUDO') {
+            usersDB = {};
+            mensagensChat = [];
+            arquivosAdmin = [];
+            await saveData();
+            if(currentUser) logout();
+            alert('✅ Sistema completamente resetado!');
+            location.reload();
+        } else {
+            alert('Operação cancelada.');
+        }
+    }
+}
+
+// ============================================================
+//  ADMIN - NAVEGAÇÃO
+// ============================================================
+function verificarSenhaAdmin() {
+    const senha = prompt("Digite a senha de administrador:");
+    if (senha === "1993199319931993") abrirAdminPanel();
+    else if (senha !== null) alert("Senha incorreta!");
+}
+
+function switchAdminTab(tab) {
+    const depositosSection = document.getElementById('adminDepositosSection');
+    const saquesSection = document.getElementById('adminSaquesSection');
+    const chatSection = document.getElementById('adminChatSection');
+    const arquivosSection = document.getElementById('adminArquivosSection');
+    const limparSection = document.getElementById('adminLimparSection');
+    const btns = document.querySelectorAll('.tab-admin-btn');
+    depositosSection.classList.remove('active');
+    saquesSection.classList.remove('active');
+    chatSection.classList.remove('active');
+    arquivosSection.classList.remove('active');
+    limparSection.classList.remove('active');
+    if(tab === 'depositos') {
+        depositosSection.classList.add('active');
+        btns[0].classList.add('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active'); btns[4].classList.remove('active');
+        renderizarAdminDepositos();
+    } else if(tab === 'saques') {
+        saquesSection.classList.add('active');
+        btns[0].classList.remove('active'); btns[1].classList.add('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active'); btns[4].classList.remove('active');
+        renderizarAdminSaques();
+    } else if(tab === 'chat') {
+        chatSection.classList.add('active');
+        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.add('active'); btns[3].classList.remove('active'); btns[4].classList.remove('active');
+        renderizarAdminChat();
+    } else if(tab === 'arquivos') {
+        arquivosSection.classList.add('active');
+        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.add('active'); btns[4].classList.remove('active');
+        renderizarAdminArquivos();
+    } else {
+        limparSection.classList.add('active');
+        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active'); btns[4].classList.add('active');
+        renderizarAdminLimpar();
+    }
+}
+
+function abrirAdminPanel() {
+    renderizarAdminDepositos();
+    renderizarAdminSaques();
+    renderizarAdminChat();
+    renderizarAdminArquivos();
+    renderizarAdminLimpar();
+    document.getElementById('adminModal').classList.remove('hidden');
+    document.getElementById('adminDepositosSection').classList.add('active');
+}
+
+function fecharAdminPanel(){ document.getElementById('adminModal').classList.add('hidden'); }
+
+function fecharModalComprovante() { document.getElementById('modalComprovante').classList.add('hidden'); }
+
+// ============================================================
+//  INVESTIMENTOS
+// ============================================================
+async function realizarInvestimento() {
+    const valor = parseInt(document.getElementById('investValor').value);
+    const prazoDias = parseInt(document.getElementById('investPrazo').value);
+    const rendimento = RENDIMENTOS[prazoDias];
+    const planoNome = prazoDias===21 ? '3 Semanas (35%)' : (prazoDias===30 ? '1 Mês (45%)' : '2 Meses (85%)');
+    if(isNaN(valor) || valor < 1000) return showErrorApp('Valor mínimo: 1.000 Kz');
+    const user = usersDB[currentUser];
+    if(valor > user.saldo) return showErrorApp('Saldo insuficiente');
+    const dataResgate = new Date();
+    dataResgate.setDate(dataResgate.getDate() + prazoDias);
+    user.saldo -= valor;
+    if(!user.investimentos) user.investimentos = [];
+    user.investimentos.push({
+        id: Date.now(), valor, plano: planoNome, prazoDias, rendimento,
+        totalResgate: valor + (valor * rendimento / 100),
+        dataInicio: new Date().toISOString(),
+        dataResgate: dataResgate.toISOString(),
+        status: 'ativo'
+    });
+    if(!user.historico) user.historico = [];
+    user.historico.push({tipo:"enviado", valor, descricao:`Investimento: ${planoNome}`, data:new Date().toISOString()});
+    await saveData();
+    atualizarSaldo();
+    renderizarInvestimentos();
+    document.getElementById('investValor').value = '';
+    showSuccessApp(`✅ Investimento de ${valor.toLocaleString('pt-AO')} Kz realizado!`);
+}
+
+function renderizarInvestimentos() {
+    const user = usersDB[currentUser];
+    if(!user) return;
+    const ativos = (user.investimentos || []).filter(i => i.status === 'ativo');
+    const resumoDiv = document.getElementById('resumoInvestimentosAtivos');
+    if(ativos.length === 0) {
+        resumoDiv.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">💼 Nenhum investimento ativo</div>';
+    } else {
+        resumoDiv.innerHTML = '';
+        ativos.forEach(inv => {
+            const dataResgate = new Date(inv.dataResgate);
+            const agora = new Date();
+            const diffMs = dataResgate - agora;
+            let diasRestantes = 0;
+            if(diffMs > 0) diasRestantes = Math.ceil(diffMs / (1000*60*60*24));
+            const progresso = Math.min(100, ((inv.prazoDias - diasRestantes) / inv.prazoDias) * 100);
+            const timerHtml = criarTimerElemento(inv);
+            const card = document.createElement('div');
+            card.className = 'invest-card-resumo';
+            card.innerHTML = `
+                <div><strong>📊 ${inv.plano}</strong></div>
+                <div>💰 Valor: ${inv.valor.toLocaleString('pt-AO')} Kz</div>
+                <div>📈 Rendimento: ${inv.rendimento}% → ${inv.totalResgate.toLocaleString('pt-AO')} Kz</div>
+                ${timerHtml}
+                <div class="progress-bar"><div class="progress-fill" style="width:${progresso}%"></div></div>
+            `;
+            resumoDiv.appendChild(card);
+        });
+    }
+    const ativosDiv = document.getElementById('investimentosAtivosList');
+    if(ativos.length === 0) ativosDiv.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Nenhum investimento ativo</div>';
+    else {
+        ativosDiv.innerHTML = '';
+        ativos.forEach(inv => {
+            const timerHtml = criarTimerElemento(inv);
+            const div = document.createElement('div');
+            div.className = 'invest-item';
+            div.innerHTML = `
+                <div><strong>${inv.plano}</strong></div>
+                <div>💰 ${inv.valor.toLocaleString('pt-AO')} Kz → +${inv.rendimento}% = ${inv.totalResgate.toLocaleString('pt-AO')} Kz</div>
+                ${timerHtml}
+            `;
+            ativosDiv.appendChild(div);
+        });
+    }
+}
+
+// ============================================================
+//  AUTENTICAÇÃO
+// ============================================================
+async function fazerCadastro() {
+    const nome = document.getElementById('regNome').value.trim();
+    const phoneRaw = document.getElementById('regPhone').value;
+    const password = document.getElementById('regPassword').value;
+    const confirm = document.getElementById('regConfirmPassword').value;
+    if(!nome || !phoneRaw || !password) return showError('Preencha todos os campos');
+    const phone = normalizePhone(phoneRaw);
+    if(!phone) return showError('Número inválido (ex: 923456789)');
+    if(password.length < 4) return showError('Senha deve ter no mínimo 4 caracteres');
+    if(password !== confirm) return showError('Senhas não conferem');
+    if(usersDB[phone]) return showError('Número já cadastrado');
+    
+    usersDB[phone] = {
+        id: phone, nome, phone, password, saldo: 100,
+        historico: [{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}],
+        investimentos: [], saques: [], depositos: [], iban: null
+    };
+    await saveData();
+    showError('✅ Conta criada! Faça login.');
+    document.getElementById('regNome').value = '';
+    document.getElementById('regPhone').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regConfirmPassword').value = '';
+    switchAuthTab('login');
+}
+
+async function fazerLogin() {
+    const phoneRaw = document.getElementById('loginPhone').value;
+    const password = document.getElementById('loginPassword').value;
+    const phone = normalizePhone(phoneRaw);
+    if(!phone || !password) return showError('Preencha todos os campos');
+    const user = usersDB[phone];
+    if(!user || user.password !== password) return showError('Número ou senha incorretos');
+    currentUser = phone;
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('userNameDisplay').innerText = user.nome;
+    document.getElementById('userPhoneDisplay').innerText = phone;
+    atualizarSaldo();
+    hideAllPanels();
+    renderizarInvestimentos();
+    atualizarBadgeChat();
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        if(currentUser && usersDB[currentUser]) renderizarInvestimentos();
+    }, 1000);
+}
+
+// ============================================================
+//  TRANSFERÊNCIAS
+// ============================================================
+function mostrarConfirmacao() {
+    const destinoRaw = document.getElementById('destinoPhone').value;
+    const valor = parseInt(document.getElementById('valorEnvio').value);
+    const destino = normalizePhone(destinoRaw);
+    if(!destino) return showErrorApp('Destino inválido');
+    if(destino === currentUser) return showErrorApp('Não pode enviar para si mesmo');
+    if(isNaN(valor) || valor <= 0) return showErrorApp('Valor inválido');
+    const userOrigem = usersDB[currentUser];
+    if(valor > userOrigem.saldo) return showErrorApp('Saldo insuficiente');
+    const userDestino = usersDB[destino];
+    if(!userDestino) return showErrorApp('Usuário não encontrado');
+    pendingTransfer = {destino, destinoNome: userDestino.nome, valor};
+    document.getElementById('confirmDestinoNome').innerText = userDestino.nome;
+    document.getElementById('confirmValor').innerHTML = `${valor.toLocaleString('pt-AO')} Kz`;
+    document.getElementById('confirmSaldoRestante').innerHTML = `${(userOrigem.saldo - valor).toLocaleString('pt-AO')} Kz`;
+    document.getElementById('enviarPanel').classList.add('hidden');
+    document.getElementById('confirmacaoPanel').classList.remove('hidden');
+}
+function fecharConfirmacao() { document.getElementById('confirmacaoPanel').classList.add('hidden'); document.getElementById('enviarPanel').classList.remove('hidden'); pendingTransfer = null; }
+async function confirmarEnvio() {
+    if(!pendingTransfer) return;
+    const userOrigem = usersDB[currentUser];
+    const userDestino = usersDB[pendingTransfer.destino];
+    if(pendingTransfer.valor > userOrigem.saldo) return showErrorApp('Saldo insuficiente');
+    userOrigem.saldo -= pendingTransfer.valor;
+    userDestino.saldo += pendingTransfer.valor;
+    if(!userOrigem.historico) userOrigem.historico = [];
+    if(!userDestino.historico) userDestino.historico = [];
+    userOrigem.historico.push({tipo:"enviado", valor:pendingTransfer.valor, descricao:`Para ${userDestino.nome}`, data:new Date().toISOString()});
+    userDestino.historico.push({tipo:"recebido", valor:pendingTransfer.valor, descricao:`De ${userOrigem.nome}`, data:new Date().toISOString()});
+    await saveData();
+    atualizarSaldo();
+    showSuccessApp(`✅ Enviado ${pendingTransfer.valor.toLocaleString('pt-AO')} Kz`);
+    fecharConfirmacao();
+    hideAllPanels();
+}
+
+// ============================================================
+//  SAQUES
+// ============================================================
+async function solicitarSaque() {
+    const user = usersDB[currentUser];
+    if(!user.iban) return showErrorApp('Cadastre um IBAN em Perfil');
+    const valor = parseInt(document.getElementById('saqueValor').value);
+    const desc = document.getElementById('saqueDesc').value || 'Saque bancário';
+    if(isNaN(valor) || valor < 1000) return showErrorApp('Valor mínimo: 1.000 Kz');
+    if(valor > user.saldo) return showErrorApp('Saldo insuficiente');
+    if(!user.saques) user.saques = [];
+    user.saques.push({id: Date.now(), valor, iban: {...user.iban}, descricao: desc, data: new Date().toISOString(), status: 'pendente'});
+    await saveData();
+    renderizarHistoricoSaques();
+    renderizarGlobalSaques();
+    document.getElementById('saqueValor').value = '';
+    document.getElementById('saqueDesc').value = '';
+    showSuccessApp('✅ Pedido de saque enviado! Aguarde aprovação.');
+}
+
+function renderizarHistoricoSaques() {
+    const user = usersDB[currentUser];
+    const container = document.getElementById('historicoSaquesList');
+    if(!user.saques || user.saques.length === 0) { container.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Nenhum saque</div>'; return; }
+    container.innerHTML = '';
+    [...user.saques].reverse().forEach(saq => {
+        const div = document.createElement('div'); div.className = 'saque-item';
+        const statusClass = saq.status==='aprovado' ? 'status-aprovado' : (saq.status==='pendente' ? 'status-pendente' : 'status-rejeitado');
+        const statusText = saq.status==='aprovado' ? '✅ Aprovado' : (saq.status==='pendente' ? '⏳ Pendente' : '❌ Rejeitado');
+        div.innerHTML = `<div><strong>${saq.valor.toLocaleString('pt-AO')} Kz</strong></div><div>🏦 ${saq.iban?.banco || 'N/A'}</div><div>📝 ${saq.descricao}</div><div>📅 ${new Date(saq.data).toLocaleString()}</div><div><span class="${statusClass}">${statusText}</span></div>`;
+        container.appendChild(div);
+    });
+}
+
+// ============================================================
+//  PERFIL
+// ============================================================
+function renderizarPerfil() {
+    const user = usersDB[currentUser];
+    document.getElementById('perfilInfo').innerHTML = `<div><strong>${user.nome}</strong><br>📱 ${user.phone}<br>💰 Saldo: ${user.saldo.toLocaleString('pt-AO')} Kz</div>`;
+    document.getElementById('dadosBancarios').innerHTML = user.iban ? `<div>🏦 ${user.iban.banco}<br>🔢 ${user.iban.numero}<br>👤 ${user.iban.titular}</div>` : '<div style="color:#64748b">Nenhum IBAN cadastrado</div>';
+}
+function showConfigIBAN() {
+    const user = usersDB[currentUser];
+    if(user.iban) { document.getElementById('ibanBanco').value = user.iban.banco; document.getElementById('ibanNumero').value = user.iban.numero; document.getElementById('ibanTitular').value = user.iban.titular; }
+    else { document.getElementById('ibanBanco').value = ''; document.getElementById('ibanNumero').value = ''; document.getElementById('ibanTitular').value = ''; }
+    document.getElementById('modalIBAN').classList.remove('hidden');
+}
+function fecharModalIBAN(){ document.getElementById('modalIBAN').classList.add('hidden'); }
+async function salvarIBAN(){
+    usersDB[currentUser].iban = {
+        banco: document.getElementById('ibanBanco').value.trim(),
+        numero: document.getElementById('ibanNumero').value.trim(),
+        titular: document.getElementById('ibanTitular').value.trim()
+    };
+    await saveData();
+    fecharModalIBAN();
+    renderizarPerfil();
+    atualizarDisplayIBAN();
+    showSuccessApp('✅ IBAN salvo!');
+}
+function atualizarDisplayIBAN(){
+    const user = usersDB[currentUser];
+    document.getElementById('ibanDisplay').innerHTML = user.iban ? `🏦 ${user.iban.banco} - ${user.iban.numero}` : 'Nenhum IBAN cadastrado';
+}
+function editarIBAN(){ showConfigIBAN(); }
+
+function renderizarHistorico(){
+    const user = usersDB[currentUser];
+    const container = document.getElementById('historicoList');
+    if(!user.historico || user.historico.length === 0) { container.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Nenhuma transação</div>'; return; }
+    container.innerHTML = '';
+    [...user.historico].reverse().forEach(item => {
+        const div = document.createElement('div'); div.className = 'transacao-item';
+        const icon = item.tipo === 'enviado' ? '📤' : '📥';
+        const sinal = item.tipo === 'enviado' ? '-' : '+';
+        div.innerHTML = `<div style="display:flex;justify-content:space-between"><span>${icon} ${item.tipo === 'enviado' ? 'Enviado' : 'Recebido'}</span><span style="color:${item.tipo === 'enviado' ? '#dc2626' : '#059669'}">${sinal} ${item.valor.toLocaleString('pt-AO')} Kz</span></div><div>${item.descricao}</div><div style="font-size:10px;color:#64748b">${new Date(item.data).toLocaleString()}</div>`;
+        container.appendChild(div);
+    });
+}
+
+// ============================================================
+//  NAVEGAÇÃO
+// ============================================================
+function showDepositar(){ hideAllPanels(); document.getElementById('depositarPanel').classList.remove('hidden'); renderizarHistoricoDepositos(); }
+function showEnviar(){ hideAllPanels(); document.getElementById('enviarPanel').classList.remove('hidden'); }
+function showInvestir(){ hideAllPanels(); document.getElementById('investirPanel').classList.remove('hidden'); renderizarInvestimentos(); }
+function showSaque(){ 
+    hideAllPanels(); 
+    document.getElementById('saquePanel').classList.remove('hidden'); 
+    atualizarDisplayIBAN(); 
+    renderizarHistoricoSaques(); 
+    renderizarGlobalSaques();
+}
+function showHistorico(){ hideAllPanels(); document.getElementById('historicoPanel').classList.remove('hidden'); renderizarHistorico(); }
+function showPerfil(){ hideAllPanels(); document.getElementById('perfilPanel').classList.remove('hidden'); renderizarPerfil(); }
+function showSuporte(){ hideAllPanels(); document.getElementById('suportePanel').classList.remove('hidden'); }
+function showPitch(){ hideAllPanels(); document.getElementById('pitchPanel').classList.remove('hidden'); }
+
+// ============================================================
+//  VERIFICAR INVESTIMENTOS EXPIRADOS
+// ============================================================
+async function verificarInvestimentosExpirados() {
+    let changed = false;
+    for(let phone in usersDB) {
+        const user = usersDB[phone];
+        if(user.investimentos) {
+            user.investimentos.forEach(inv => {
+                if(inv.status === 'ativo' && new Date(inv.dataResgate) <= new Date()) {
+                    inv.status = 'resgatado';
+                    user.saldo += inv.totalResgate;
+                    if(!user.historico) user.historico = [];
+                    user.historico.push({tipo:"recebido", valor:inv.totalResgate, descricao:`💰 Resgate de investimento: ${inv.plano} - Lucro de ${(inv.totalResgate - inv.valor).toLocaleString('pt-AO')} Kz`, data:new Date().toISOString()});
+                    changed = true;
+                }
+            });
+        }
+    }
+    if(changed) { await saveData(); if(currentUser) atualizarSaldo(); }
+    if(currentUser) atualizarBadgeChat();
+    setTimeout(verificarInvestimentosExpirados, 5000);
+}
+
+// ============================================================
+//  INICIALIZAÇÃO
+// ============================================================
+(async function init() {
+    await loadData();
+    verificarInvestimentosExpirados();
+    // Se não houver usuários, criar os padrão
+    if(Object.keys(usersDB).length === 0) {
+        usersDB = {
+            "923456789": {id:"923456789", nome:"João Silva", phone:"923456789", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:null},
+            "912345678": {id:"912345678", nome:"Maria Silva", phone:"912345678", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:{banco:"BAI", numero:"AO060000000000000000000", titular:"Maria Silva"}}
+        };
+        await saveData();
+    }
+})();
+
+// Event listeners para máscaras de telefone
+document.getElementById('loginPhone')?.addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, '').slice(0,9));
+document.getElementById('regPhone')?.addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, '').slice(0,9));
+document.getElementById('destinoPhone')?.addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, '').slice(0,9));
+</script>
+</body>
+</html>
