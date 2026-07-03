@@ -8,7 +8,6 @@
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
 <style>
 /* ========== ESTILOS COMPLETOS ========== */
@@ -160,7 +159,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
 }
 .tab-btn.active { background: #2563eb; color: white; }
 .historico-container { max-height: 350px; overflow-y: auto; }
-.transacao-item, .invest-item, .saque-item, .deposito-item, .chat-message, .global-saque-item {
+.transacao-item, .invest-item, .saque-item, .deposito-item, .chat-message {
     background: #f8fafc;
     padding: 14px;
     border-radius: 12px;
@@ -319,16 +318,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     opacity: 0.6;
     text-align: right;
 }
-.chat-file {
-    display: inline-block;
-    background: rgba(0,0,0,0.1);
-    padding: 6px 10px;
-    border-radius: 8px;
-    margin-top: 6px;
-    font-size: 12px;
-    cursor: pointer;
-}
-.chat-file:hover { background: rgba(0,0,0,0.2); }
 .unread-badge {
     background: #ef4444;
     color: white;
@@ -341,32 +330,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     font-size: 11px;
     margin-left: 5px;
 }
-.file-list {
-    max-height: 200px;
-    overflow-y: auto;
-    margin-top: 10px;
-}
-.file-item {
-    background: #f1f5f9;
-    padding: 8px;
-    margin-bottom: 5px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-}
-.delete-btn {
-    background: #fee2e2;
-    color: #dc2626;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11px;
-    margin-left: 8px;
-}
-.delete-btn:hover { background: #fecaca; }
 .timer-container {
     background: linear-gradient(135deg, #1e293b, #0f172a);
     border-radius: 16px;
@@ -559,7 +522,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             </div>
             <div id="chatMessages" class="chat-messages"></div>
             <div class="input-group"><textarea id="chatMessageInput" placeholder="Digite sua mensagem..." rows="2"></textarea></div>
-            <div class="input-group"><label>📎 Anexar arquivo</label><input type="file" id="chatFileInput" accept=".pdf,.jpg,.png,.jpeg,.txt,.doc,.docx"></div>
             <div class="buttons-row"><button class="btn btn-primary" onclick="enviarMensagem()">Enviar Mensagem</button></div>
             <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
         </div>
@@ -573,19 +535,17 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
                 <button class="tab-admin-btn active" onclick="switchAdminTab('depositos')">📥 Depósitos</button>
                 <button class="tab-admin-btn" onclick="switchAdminTab('saques')">📤 Saques</button>
                 <button class="tab-admin-btn" onclick="switchAdminTab('chat')">💬 Chat</button>
-                <button class="tab-admin-btn" onclick="switchAdminTab('arquivos')">📁 Arquivos</button>
                 <button class="tab-admin-btn" onclick="switchAdminTab('limpar')">🗑️ Limpar</button>
             </div>
             <div id="adminDepositosSection" class="admin-section active"></div>
             <div id="adminSaquesSection" class="admin-section"></div>
             <div id="adminChatSection" class="admin-section"></div>
-            <div id="adminArquivosSection" class="admin-section"></div>
             <div id="adminLimparSection" class="admin-section"></div>
             <button class="btn btn-outline btn-sm" onclick="fecharAdminPanel()" style="margin-top:15px;width:auto;display:block;margin-left:auto;margin-right:auto">Fechar</button>
         </div>
         
-        <!-- Modal Visualizar Comprovante -->
-        <div id="modalComprovante" class="card hidden" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1002;max-width:90%;width:400px;max-height:80vh;overflow-y:auto"><div class="card-title">📎 Comprovativo / Arquivo</div><div id="comprovanteConteudo" style="text-align:center;padding:10px"></div><button class="btn btn-outline btn-sm" onclick="fecharModalComprovante()" style="margin-top:15px;width:auto;display:block;margin-left:auto;margin-right:auto">Fechar</button></div>
+        <!-- Modal Visualizar Comprovante (mantido apenas para compatibilidade, sem uso) -->
+        <div id="modalComprovante" class="card hidden" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1002;max-width:90%;width:400px;max-height:80vh;overflow-y:auto"><div class="card-title">📎 Comprovativo</div><div id="comprovanteConteudo" style="text-align:center;padding:10px"></div><button class="btn btn-outline btn-sm" onclick="fecharModalComprovante()" style="margin-top:15px;width:auto;display:block;margin-left:auto;margin-right:auto">Fechar</button></div>
     </div>
 </div>
 
@@ -605,14 +565,12 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const storage = firebase.storage();
 
 // ============================================================
 //  DADOS GLOBAIS (sincronizados com Firebase)
 // ============================================================
 let usersDB = {};
 let mensagensChat = [];
-let arquivosAdmin = [];
 let currentUser = null;
 let pendingTransfer = null;
 let timerInterval = null;
@@ -628,12 +586,10 @@ async function loadData() {
         const data = snapshot.val() || {};
         usersDB = data.users || {};
         mensagensChat = data.chat || [];
-        arquivosAdmin = data.arquivosAdmin || [];
     } catch (error) {
         console.error('Erro ao carregar dados do Firebase:', error);
         usersDB = {};
         mensagensChat = [];
-        arquivosAdmin = [];
     }
 }
 
@@ -641,26 +597,8 @@ async function saveData() {
     try {
         await db.ref('users').set(usersDB);
         await db.ref('chat').set(mensagensChat);
-        await db.ref('arquivosAdmin').set(arquivosAdmin);
     } catch (error) {
         console.error('Erro ao salvar dados no Firebase:', error);
-    }
-}
-
-async function uploadFile(file, path) {
-    if (!file) return null;
-    const ref = storage.ref(path);
-    await ref.put(file);
-    return await ref.getDownloadURL();
-}
-
-async function deleteFile(url) {
-    if (!url) return;
-    try {
-        const ref = storage.refFromURL(url);
-        await ref.delete();
-    } catch (e) {
-        console.warn('Erro ao excluir arquivo:', e);
     }
 }
 
@@ -1023,7 +961,7 @@ function criarTimerElemento(investimento) {
 }
 
 // ============================================================
-//  CHAT (com Firebase Storage)
+//  CHAT (somente texto, sem arquivos)
 // ============================================================
 function showChat() {
     hideAllPanels();
@@ -1045,14 +983,9 @@ function renderizarChat() {
         const div = document.createElement('div');
         div.className = `chat-message ${msg.usuario === 'admin' ? 'admin' : 'user'}`;
         const senderName = msg.usuario === 'admin' ? '👑 Suporte KWANZAPAY' : (usersDB[msg.usuario]?.nome || msg.usuario);
-        let fileHtml = '';
-        if(msg.arquivoURL) {
-            fileHtml = `<div class="chat-file" onclick="visualizarArquivoChat('${msg.id}')">📎 ${msg.nomeArquivo || 'Arquivo anexado'}</div>`;
-        }
         div.innerHTML = `
             <div class="sender">${senderName}</div>
             <div class="text">${msg.texto}</div>
-            ${fileHtml}
             <div class="time">${new Date(msg.data).toLocaleString()}</div>
         `;
         container.appendChild(div);
@@ -1090,38 +1023,22 @@ function atualizarBadgeChat() {
 
 async function enviarMensagem() {
     const texto = document.getElementById('chatMessageInput').value.trim();
-    const fileInput = document.getElementById('chatFileInput');
-    const arquivo = fileInput.files[0];
-    if(!texto && !arquivo) {
-        showErrorApp('Digite uma mensagem ou anexe um arquivo');
+    if(!texto) {
+        showErrorApp('Digite uma mensagem');
         return;
     }
     const mensagemId = Date.now();
-    let arquivoURL = null, nomeArquivo = null;
-    if(arquivo) {
-        try {
-            const path = `chat/${mensagemId}_${arquivo.name}`;
-            arquivoURL = await uploadFile(arquivo, path);
-            nomeArquivo = arquivo.name;
-        } catch(e) {
-            showErrorApp('Erro ao enviar arquivo: '+e.message);
-            return;
-        }
-    }
     const novaMsg = {
         id: mensagemId,
         usuario: currentUser,
         usuarioDestino: 'admin',
-        texto: texto || '📎 Arquivo anexado',
-        arquivoURL: arquivoURL,
-        nomeArquivo: nomeArquivo,
+        texto: texto,
         data: new Date().toISOString(),
         lido: false
     };
     mensagensChat.push(novaMsg);
     await saveData();
     document.getElementById('chatMessageInput').value = '';
-    fileInput.value = '';
     renderizarChat();
     showSuccessApp('✅ Mensagem enviada para o suporte!');
     if(document.getElementById('adminModal') && !document.getElementById('adminModal').classList.contains('hidden')) {
@@ -1129,34 +1046,8 @@ async function enviarMensagem() {
     }
 }
 
-function visualizarArquivoChat(msgId) {
-    const msg = mensagensChat.find(m => m.id == msgId);
-    if(msg && msg.arquivoURL) {
-        abrirModalArquivo(msg.arquivoURL, msg.nomeArquivo);
-    } else {
-        alert('Arquivo não disponível');
-    }
-}
-
-function abrirModalArquivo(url, nomeArquivo) {
-    const modal = document.getElementById('modalComprovante');
-    const container = document.getElementById('comprovanteConteudo');
-    if(!modal || !container) return;
-    if(url) {
-        const ext = url.split('.').pop().toLowerCase();
-        if(['jpg','jpeg','png','gif','webp'].includes(ext)) {
-            container.innerHTML = `<img src="${url}" style="max-width:100%; border-radius:12px;">`;
-        } else if(ext === 'pdf') {
-            container.innerHTML = `<iframe src="${url}" style="width:100%; height:400px; border:none;"></iframe>`;
-        } else {
-            container.innerHTML = `<div style="padding:20px;text-align:center"><a href="${url}" download="${nomeArquivo || 'arquivo'}" class="btn btn-primary">📥 Baixar ${nomeArquivo || 'arquivo'}</a></div>`;
-        }
-        modal.classList.remove('hidden');
-    }
-}
-
 // ============================================================
-//  ADMIN (com Firebase Storage para arquivos) - CHAT E ARQUIVOS
+//  ADMIN - CHAT E LIMPEZA (sem arquivos)
 // ============================================================
 function renderizarAdminChat() {
     const container = document.getElementById('adminChatSection');
@@ -1182,7 +1073,7 @@ function renderizarAdminChat() {
         html += `
             <div class="admin-card">
                 <div><strong>👤 ${nomeUser}</strong> (${phone})</div>
-                <div style="font-size:12px;color:#64748b;margin-top:5px;">💬 ${ultimaMsg.texto ? ultimaMsg.texto.substring(0,50) : 'Arquivo'}</div>
+                <div style="font-size:12px;color:#64748b;margin-top:5px;">💬 ${ultimaMsg.texto ? ultimaMsg.texto.substring(0,50) : '...'}</div>
                 ${naoLidas > 0 ? `<div style="margin-top:5px;"><span class="status-pendente">${naoLidas} nova(s)</span></div>` : ''}
                 <div style="margin-top:10px;display:flex;gap:8px;">
                     <button class="btn-outline btn-sm" onclick="abrirConversaAdmin('${phone}')">💬 Responder</button>
@@ -1200,10 +1091,8 @@ function apagarConversaAdmin(phone) {
             !( (msg.usuario === 'admin' && msg.usuarioDestino === phone) || 
                (msg.usuario === phone && msg.usuarioDestino === 'admin') )
         );
-        arquivosAdmin = arquivosAdmin.filter(a => a.usuarioDestino !== phone);
         saveData();
         renderizarAdminChat();
-        renderizarAdminArquivos();
         if(currentUser === phone) {
             atualizarBadgeChat();
             if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) renderizarChat();
@@ -1222,7 +1111,7 @@ function abrirConversaAdmin(phone) {
     let mensagensHtml = '<div style="max-height:200px;overflow-y:auto;margin-bottom:10px;background:#f8fafc;padding:10px;border-radius:10px;">';
     mensagensConversa.slice(-5).forEach(msg => {
         const remetente = msg.usuario === 'admin' ? 'Admin' : nomeUser;
-        mensagensHtml += `<div style="font-size:11px;padding:4px;border-bottom:1px solid #e2e8f0;"><strong>${remetente}:</strong> ${msg.texto ? msg.texto.substring(0,50) : 'Arquivo'}</div>`;
+        mensagensHtml += `<div style="font-size:11px;padding:4px;border-bottom:1px solid #e2e8f0;"><strong>${remetente}:</strong> ${msg.texto ? msg.texto.substring(0,50) : '...'}</div>`;
     });
     mensagensHtml += '</div>';
     const modalHtml = `
@@ -1230,7 +1119,6 @@ function abrirConversaAdmin(phone) {
             <h3>Responder para ${nomeUser}</h3>
             ${mensagensHtml}
             <textarea id="adminReplyText" rows="3" style="width:100%;padding:10px;margin:10px 0;border:1px solid #cbd5e1;border-radius:10px;" placeholder="Digite sua resposta..."></textarea>
-            <div class="input-group"><label>📎 Anexar arquivo (opcional)</label><input type="file" id="adminReplyFile" accept=".pdf,.jpg,.png,.jpeg,.txt,.doc,.docx"></div>
             <div class="buttons-row">
                 <button class="btn btn-outline" onclick="fecharAdminReply()">Cancelar</button>
                 <button class="btn btn-primary" onclick="enviarRespostaAdmin('${phone}')">Enviar</button>
@@ -1254,31 +1142,16 @@ function fecharAdminReply() {
 
 async function enviarRespostaAdmin(phone) {
     const texto = document.getElementById('adminReplyText').value.trim();
-    const fileInput = document.getElementById('adminReplyFile');
-    const arquivo = fileInput.files[0];
-    if(!texto && !arquivo) {
-        alert('Digite uma mensagem ou anexe um arquivo');
+    if(!texto) {
+        alert('Digite uma mensagem');
         return;
     }
     const mensagemId = Date.now();
-    let arquivoURL = null, nomeArquivo = null;
-    if(arquivo) {
-        try {
-            const path = `chat/admin_${mensagemId}_${arquivo.name}`;
-            arquivoURL = await uploadFile(arquivo, path);
-            nomeArquivo = arquivo.name;
-        } catch(e) {
-            alert('Erro ao enviar arquivo: '+e.message);
-            return;
-        }
-    }
     mensagensChat.push({
         id: mensagemId,
         usuario: 'admin',
         usuarioDestino: phone,
-        texto: texto || '📎 Arquivo enviado pelo suporte',
-        arquivoURL: arquivoURL,
-        nomeArquivo: nomeArquivo,
+        texto: texto,
         data: new Date().toISOString(),
         lido: false
     });
@@ -1293,143 +1166,6 @@ async function enviarRespostaAdmin(phone) {
     showSuccessApp(`✅ Resposta enviada para ${usersDB[phone]?.nome || phone}`);
 }
 
-function renderizarAdminArquivos() {
-    const container = document.getElementById('adminArquivosSection');
-    if(!container) return;
-    let usuariosList = '';
-    for(let phone in usersDB) {
-        const user = usersDB[phone];
-        usuariosList += `<option value="${phone}">${user.nome} (${phone})</option>`;
-    }
-    container.innerHTML = `
-        <div class="card-title" style="font-size:18px;margin-bottom:15px;">📤 Enviar Arquivo para Usuário</div>
-        <div class="input-group">
-            <label>Selecionar Usuário</label>
-            <select id="adminSelectUser">${usuariosList}</select>
-        </div>
-        <div class="input-group">
-            <label>Mensagem (opcional)</label>
-            <textarea id="adminFileMessage" rows="2" placeholder="Descreva o arquivo..."></textarea>
-        </div>
-        <div class="input-group">
-            <label>📎 Arquivo (PDF, Imagem, Documento)</label>
-            <input type="file" id="adminFileUpload" accept=".pdf,.jpg,.png,.jpeg,.txt,.doc,.docx,.xls,.xlsx">
-        </div>
-        <button class="btn btn-primary" onclick="enviarArquivoAdmin()">📤 Enviar Arquivo</button>
-        
-        <div class="card-title" style="font-size:18px;margin:20px 0 15px;">📋 Arquivos Enviados</div>
-        <div id="adminArquivosLista" class="file-list"></div>
-    `;
-    carregarListaArquivosAdmin();
-}
-
-function carregarListaArquivosAdmin() {
-    const container = document.getElementById('adminArquivosLista');
-    if(!container) return;
-    if(arquivosAdmin.length === 0) {
-        container.innerHTML = '<div style="color:#64748b;padding:10px;text-align:center">Nenhum arquivo enviado ainda</div>';
-        return;
-    }
-    container.innerHTML = '';
-    arquivosAdmin.slice().reverse().forEach(arquivo => {
-        const userDestino = usersDB[arquivo.usuarioDestino];
-        const nomeDestino = userDestino ? `${userDestino.nome} (${arquivo.usuarioDestino})` : arquivo.usuarioDestino;
-        const div = document.createElement('div');
-        div.className = 'file-item';
-        div.innerHTML = `
-            <div style="flex:1;">
-                <strong>${arquivo.nomeArquivo}</strong><br>
-                <small>Para: ${nomeDestino}</small><br>
-                <small>📅 ${new Date(arquivo.data).toLocaleString()}</small>
-                ${arquivo.mensagem ? `<br><small>💬 ${arquivo.mensagem.substring(0,50)}</small>` : ''}
-            </div>
-            <div style="display:flex;gap:5px;">
-                <button class="btn-outline btn-sm" onclick="visualizarArquivoAdmin('${arquivo.id}')">👁️ Ver</button>
-                <button class="delete-btn" onclick="apagarArquivoAdmin('${arquivo.id}')">🗑️</button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-async function enviarArquivoAdmin() {
-    const selectUser = document.getElementById('adminSelectUser');
-    const usuarioDestino = selectUser.value;
-    const mensagem = document.getElementById('adminFileMessage').value.trim();
-    const fileInput = document.getElementById('adminFileUpload');
-    const arquivo = fileInput.files[0];
-    if(!usuarioDestino) { alert('Selecione um usuário'); return; }
-    if(!arquivo) { alert('Selecione um arquivo para enviar'); return; }
-    const userDestino = usersDB[usuarioDestino];
-    if(!userDestino) { alert('Usuário não encontrado'); return; }
-    
-    const arquivoId = Date.now();
-    let arquivoURL = null;
-    try {
-        const path = `admin/${arquivoId}_${arquivo.name}`;
-        arquivoURL = await uploadFile(arquivo, path);
-    } catch(e) {
-        alert('Erro ao enviar arquivo: '+e.message);
-        return;
-    }
-    
-    arquivosAdmin.push({
-        id: arquivoId,
-        usuarioDestino: usuarioDestino,
-        nomeArquivo: arquivo.name,
-        arquivoURL: arquivoURL,
-        mensagem: mensagem,
-        data: new Date().toISOString()
-    });
-    
-    mensagensChat.push({
-        id: arquivoId,
-        usuario: 'admin',
-        usuarioDestino: usuarioDestino,
-        texto: mensagem || `📎 ${arquivo.name} (enviado pelo suporte)`,
-        arquivoURL: arquivoURL,
-        nomeArquivo: arquivo.name,
-        data: new Date().toISOString(),
-        lido: false
-    });
-    
-    await saveData();
-    document.getElementById('adminFileMessage').value = '';
-    fileInput.value = '';
-    carregarListaArquivosAdmin();
-    renderizarAdminChat();
-    if(currentUser === usuarioDestino) {
-        atualizarBadgeChat();
-        if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) renderizarChat();
-        showSuccessApp(`📨 Novo arquivo recebido do suporte: ${arquivo.name}`);
-    }
-    showSuccessApp(`✅ Arquivo enviado para ${userDestino.nome}!`);
-}
-
-function visualizarArquivoAdmin(arquivoId) {
-    const arquivo = arquivosAdmin.find(a => a.id == arquivoId);
-    if(arquivo && arquivo.arquivoURL) {
-        abrirModalArquivo(arquivo.arquivoURL, arquivo.nomeArquivo);
-    } else {
-        alert('Arquivo não encontrado');
-    }
-}
-
-async function apagarArquivoAdmin(arquivoId) {
-    if(confirm('⚠️ Tem certeza que deseja apagar este arquivo permanentemente?')) {
-        const arquivo = arquivosAdmin.find(a => a.id == arquivoId);
-        if(arquivo && arquivo.arquivoURL) {
-            try { await deleteFile(arquivo.arquivoURL); } catch(e) {}
-        }
-        arquivosAdmin = arquivosAdmin.filter(a => a.id !== arquivoId);
-        mensagensChat = mensagensChat.filter(m => m.id !== arquivoId);
-        await saveData();
-        carregarListaArquivosAdmin();
-        renderizarAdminChat();
-        showSuccessApp('✅ Arquivo apagado!');
-    }
-}
-
 function renderizarAdminLimpar() {
     const container = document.getElementById('adminLimparSection');
     if(!container) return;
@@ -1442,7 +1178,7 @@ function renderizarAdminLimpar() {
         </div>
         <div class="admin-card" style="border-left-color:#ef4444;">
             <strong>⚠️ RESET COMPLETO DO SISTEMA</strong>
-            <p style="font-size:12px;color:#64748b;margin:10px 0;">Remove TODOS os dados: usuários, transações, mensagens, arquivos.</p>
+            <p style="font-size:12px;color:#64748b;margin:10px 0;">Remove TODOS os dados: usuários, transações, mensagens.</p>
             <button class="btn btn-danger" onclick="apagarHistoricoCompleto()">🔥 RESETAR TUDO</button>
         </div>
     `;
@@ -1451,10 +1187,8 @@ function renderizarAdminLimpar() {
 async function apagarTodasMensagensAdmin() {
     if(confirm('⚠️ Apagar TODAS as mensagens enviadas pelo administrador?')) {
         mensagensChat = mensagensChat.filter(msg => msg.usuario !== 'admin');
-        arquivosAdmin = [];
         await saveData();
         renderizarAdminChat();
-        renderizarAdminArquivos();
         if(currentUser && document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) renderizarChat();
         showSuccessApp('✅ Todas as mensagens do admin foram apagadas!');
     }
@@ -1466,7 +1200,6 @@ async function apagarHistoricoCompleto() {
         if(confirm2 === 'APAGAR TUDO') {
             usersDB = {};
             mensagensChat = [];
-            arquivosAdmin = [];
             await saveData();
             if(currentUser) logout();
             alert('✅ Sistema completamente resetado!');
@@ -1490,33 +1223,27 @@ function switchAdminTab(tab) {
     const depositosSection = document.getElementById('adminDepositosSection');
     const saquesSection = document.getElementById('adminSaquesSection');
     const chatSection = document.getElementById('adminChatSection');
-    const arquivosSection = document.getElementById('adminArquivosSection');
     const limparSection = document.getElementById('adminLimparSection');
     const btns = document.querySelectorAll('.tab-admin-btn');
     depositosSection.classList.remove('active');
     saquesSection.classList.remove('active');
     chatSection.classList.remove('active');
-    arquivosSection.classList.remove('active');
     limparSection.classList.remove('active');
     if(tab === 'depositos') {
         depositosSection.classList.add('active');
-        btns[0].classList.add('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active'); btns[4].classList.remove('active');
+        btns[0].classList.add('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active');
         renderizarAdminDepositos();
     } else if(tab === 'saques') {
         saquesSection.classList.add('active');
-        btns[0].classList.remove('active'); btns[1].classList.add('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active'); btns[4].classList.remove('active');
+        btns[0].classList.remove('active'); btns[1].classList.add('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active');
         renderizarAdminSaques();
     } else if(tab === 'chat') {
         chatSection.classList.add('active');
-        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.add('active'); btns[3].classList.remove('active'); btns[4].classList.remove('active');
+        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.add('active'); btns[3].classList.remove('active');
         renderizarAdminChat();
-    } else if(tab === 'arquivos') {
-        arquivosSection.classList.add('active');
-        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.add('active'); btns[4].classList.remove('active');
-        renderizarAdminArquivos();
     } else {
         limparSection.classList.add('active');
-        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active'); btns[4].classList.add('active');
+        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.add('active');
         renderizarAdminLimpar();
     }
 }
@@ -1525,7 +1252,6 @@ function abrirAdminPanel() {
     renderizarAdminDepositos();
     renderizarAdminSaques();
     renderizarAdminChat();
-    renderizarAdminArquivos();
     renderizarAdminLimpar();
     document.getElementById('adminModal').classList.remove('hidden');
     document.getElementById('adminDepositosSection').classList.add('active');
