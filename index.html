@@ -395,6 +395,13 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     flex: 1;
     margin-top: 0;
 }
+/* Estilo para o seletor de usuário no admin */
+.admin-user-selector {
+    margin-bottom: 15px;
+}
+.admin-user-selector select {
+    background: white;
+}
 </style>
 </head>
 <body>
@@ -1047,11 +1054,13 @@ async function enviarMensagem() {
 }
 
 // ============================================================
-//  ADMIN - CHAT E LIMPEZA (sem arquivos)
+//  ADMIN - CHAT E LIMPEZA (com envio direto para qualquer usuário)
 // ============================================================
 function renderizarAdminChat() {
     const container = document.getElementById('adminChatSection');
     if(!container) return;
+    
+    // --- Parte 1: Lista de conversas existentes ---
     const conversas = new Map();
     mensagensChat.forEach(msg => {
         const outroUsuario = msg.usuario === 'admin' ? msg.usuarioDestino : msg.usuario;
@@ -1060,31 +1069,126 @@ function renderizarAdminChat() {
             conversas.get(outroUsuario).push(msg);
         }
     });
-    if(conversas.size === 0) {
-        container.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">Nenhuma conversa ainda</div>';
-        return;
-    }
+    
     let html = '';
-    for(let [phone, mensagens] of conversas) {
-        const user = usersDB[phone];
-        const nomeUser = user?.nome || phone;
-        const ultimaMsg = mensagens[mensagens.length - 1];
-        const naoLidas = mensagens.filter(m => m.usuario === phone && !m.lido).length;
-        html += `
-            <div class="admin-card">
-                <div><strong>👤 ${nomeUser}</strong> (${phone})</div>
-                <div style="font-size:12px;color:#64748b;margin-top:5px;">💬 ${ultimaMsg.texto ? ultimaMsg.texto.substring(0,50) : '...'}</div>
-                ${naoLidas > 0 ? `<div style="margin-top:5px;"><span class="status-pendente">${naoLidas} nova(s)</span></div>` : ''}
-                <div style="margin-top:10px;display:flex;gap:8px;">
-                    <button class="btn-outline btn-sm" onclick="abrirConversaAdmin('${phone}')">💬 Responder</button>
-                    <button class="btn-danger btn-sm" onclick="apagarConversaAdmin('${phone}')">🗑️ Apagar</button>
-                </div>
+    
+    // --- Seletor e formulário para enviar mensagem para QUALQUER usuário ---
+    html += `
+        <div class="admin-card" style="border-left-color: #2563eb; background: #eff6ff;">
+            <div style="font-weight:700; color:#1e3a8a; margin-bottom:10px;">📨 Enviar mensagem para qualquer usuário</div>
+            <div class="admin-user-selector">
+                <label style="font-size:13px; color:#475569;">Selecione o destinatário</label>
+                <select id="adminUserSelector" style="width:100%; padding:10px; border-radius:12px; border:1px solid #cbd5e1; background:white;">
+                    <option value="">-- Escolha um usuário --</option>
+                </select>
             </div>
-        `;
+            <div class="input-group" style="margin-top:5px;">
+                <textarea id="adminDirectMessage" rows="2" placeholder="Digite a mensagem..." style="width:100%; padding:10px; border-radius:12px; border:1px solid #cbd5e1; background:white;"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="enviarMensagemAdminDireta()" style="margin-top:0;">📤 Enviar Mensagem</button>
+            <div style="font-size:11px; color:#64748b; margin-top:5px;">A mensagem aparecerá no chat do usuário com notificação.</div>
+        </div>
+    `;
+    
+    // Preencher o seletor com todos os usuários (exceto admin)
+    const userSelect = document.createElement('select');
+    userSelect.id = 'adminUserSelectorTemp'; // apenas para preencher
+    // Mas como o HTML já foi injetado, vamos preencher via JS após renderizar
+    // Vamos usar um setTimeout ou fazer diretamente depois
+    setTimeout(() => {
+        const select = document.getElementById('adminUserSelector');
+        if(select) {
+            // Manter a opção padrão
+            select.innerHTML = '<option value="">-- Escolha um usuário --</option>';
+            for(let phone in usersDB) {
+                const user = usersDB[phone];
+                if(user && user.nome) {
+                    const option = document.createElement('option');
+                    option.value = phone;
+                    option.textContent = `${user.nome} (${phone})`;
+                    select.appendChild(option);
+                }
+            }
+        }
+    }, 0);
+    
+    // --- Lista de conversas existentes ---
+    if(conversas.size === 0) {
+        html += '<div style="color:#64748b;padding:20px;text-align:center;margin-top:10px;">Nenhuma conversa ainda</div>';
+    } else {
+        html += '<div style="margin-top:15px;"><div style="font-weight:600; color:#1e293b; margin-bottom:10px;">💬 Conversas existentes</div>';
+        for(let [phone, mensagens] of conversas) {
+            const user = usersDB[phone];
+            const nomeUser = user?.nome || phone;
+            const ultimaMsg = mensagens[mensagens.length - 1];
+            const naoLidas = mensagens.filter(m => m.usuario === phone && !m.lido).length;
+            html += `
+                <div class="admin-card">
+                    <div><strong>👤 ${nomeUser}</strong> (${phone})</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:5px;">💬 ${ultimaMsg.texto ? ultimaMsg.texto.substring(0,50) : '...'}</div>
+                    ${naoLidas > 0 ? `<div style="margin-top:5px;"><span class="status-pendente">${naoLidas} nova(s)</span></div>` : ''}
+                    <div style="margin-top:10px;display:flex;gap:8px;">
+                        <button class="btn-outline btn-sm" onclick="abrirConversaAdmin('${phone}')">💬 Responder</button>
+                        <button class="btn-danger btn-sm" onclick="apagarConversaAdmin('${phone}')">🗑️ Apagar</button>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
     }
+    
     container.innerHTML = html;
 }
 
+// Nova função: enviar mensagem do admin diretamente para qualquer usuário (selecionado no dropdown)
+async function enviarMensagemAdminDireta() {
+    const select = document.getElementById('adminUserSelector');
+    const phone = select ? select.value : '';
+    const texto = document.getElementById('adminDirectMessage')?.value.trim();
+    
+    if(!phone) {
+        alert('Selecione um usuário destinatário.');
+        return;
+    }
+    if(!texto) {
+        alert('Digite a mensagem.');
+        return;
+    }
+    
+    // Verifica se o usuário existe
+    if(!usersDB[phone]) {
+        alert('Usuário não encontrado.');
+        return;
+    }
+    
+    const mensagemId = Date.now();
+    mensagensChat.push({
+        id: mensagemId,
+        usuario: 'admin',
+        usuarioDestino: phone,
+        texto: texto,
+        data: new Date().toISOString(),
+        lido: false
+    });
+    await saveData();
+    
+    // Limpar campo
+    document.getElementById('adminDirectMessage').value = '';
+    // Manter o select no mesmo valor (opcional)
+    showSuccessApp(`✅ Mensagem enviada para ${usersDB[phone].nome}`);
+    
+    // Atualizar a lista de conversas e o badge do usuário (se ele estiver logado)
+    if(currentUser === phone) {
+        atualizarBadgeChat();
+        if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) {
+            renderizarChat();
+        }
+    }
+    // Atualizar a aba chat do admin
+    renderizarAdminChat();
+}
+
+// As funções existentes: apagarConversaAdmin, abrirConversaAdmin, etc. permanecem.
 function apagarConversaAdmin(phone) {
     if(confirm(`⚠️ Tem certeza que deseja apagar TODAS as mensagens da conversa com ${phone}?`)) {
         mensagensChat = mensagensChat.filter(msg => 
@@ -1166,6 +1270,9 @@ async function enviarRespostaAdmin(phone) {
     showSuccessApp(`✅ Resposta enviada para ${usersDB[phone]?.nome || phone}`);
 }
 
+// ============================================================
+//  ADMIN - LIMPEZA (existente)
+// ============================================================
 function renderizarAdminLimpar() {
     const container = document.getElementById('adminLimparSection');
     if(!container) return;
