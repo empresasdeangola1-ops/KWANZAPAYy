@@ -395,14 +395,12 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     flex: 1;
     margin-top: 0;
 }
-/* Estilo para o seletor de usuário no admin */
 .admin-user-selector {
     margin-bottom: 15px;
 }
 .admin-user-selector select {
     background: white;
 }
-/* Aviso de horário */
 .horario-aviso {
     background: #fef9e7;
     border: 1px solid #f59e0b;
@@ -418,6 +416,48 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
 .horario-aviso .icon { font-size: 20px; }
 .horario-aviso .texto { flex: 1; }
 .horario-aviso .texto strong { display: block; font-size: 14px; }
+
+/* ===== Modal de Aviso Centralizado ===== */
+.aviso-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+}
+.aviso-modal.hidden { display: none; }
+.aviso-content {
+    background: white;
+    border-radius: 24px;
+    padding: 30px 24px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.aviso-icon { font-size: 48px; margin-bottom: 8px; }
+.aviso-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.aviso-message {
+    font-size: 16px;
+    color: #475569;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+.aviso-content .btn { width: 100%; }
 </style>
 </head>
 <body>
@@ -472,10 +512,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
         <!-- Painel Depositar -->
         <div id="depositarPanel" class="card hidden">
             <div class="card-title">💰 Depositar Saldo</div>
-            <!-- Aviso de horário -->
+            <!-- Aviso de horário (informativo) -->
             <div class="horario-aviso">
                 <span class="icon">🕒</span>
-                <div class="texto"><strong>Horário permitido para depósitos</strong>Das 08:00 às 17:59 (segunda a sexta)</div>
+                <div class="texto"><strong>Horário permitido para depósitos</strong>08:00 às 17:59 (todos os dias)</div>
             </div>
             <div class="deposit-info-card">
                 <div style="color:#1e3a8a;font-weight:bold;font-size:15px;">💳 Depósito via Multicaixa Express / ATM</div>
@@ -507,10 +547,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
         <!-- Painel Saque -->
         <div id="saquePanel" class="card hidden">
             <div class="card-title">🏧 Saque para Conta Bancária</div>
-            <!-- Aviso de horário -->
+            <!-- Aviso de horário (informativo) -->
             <div class="horario-aviso">
                 <span class="icon">🕒</span>
-                <div class="texto"><strong>Horário permitido para saques</strong>Das 08:00 às 17:59 (segunda a sexta)</div>
+                <div class="texto"><strong>Horário permitido para saques</strong>08:00 às 17:59 (todos os dias)</div>
             </div>
             <div id="ibanConfig" style="background:#f1f5f9;padding:15px;border-radius:12px;margin-bottom:15px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -582,6 +622,16 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     </div>
 </div>
 
+<!-- ===== MODAL DE AVISO CENTRALIZADO ===== -->
+<div id="avisoModal" class="aviso-modal hidden">
+    <div class="aviso-content">
+        <div class="aviso-icon" id="avisoIcon">⚠️</div>
+        <div class="aviso-title" id="avisoTitle">Aviso</div>
+        <div class="aviso-message" id="avisoMessage">Mensagem</div>
+        <button class="btn btn-primary" onclick="fecharAviso()">OK</button>
+    </div>
+</div>
+
 <script>
 // ============================================================
 //  CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE (NOVO PROJETO)
@@ -646,9 +696,35 @@ function normalizePhone(phone) {
     return null;
 }
 
-function showErrorApp(msg) { let d=document.createElement('div'); d.className='error-msg'; d.textContent=msg; document.getElementById('appScreen').prepend(d); setTimeout(()=>d.remove(),3000); }
-function showSuccessApp(msg) { let d=document.createElement('div'); d.className='success-msg'; d.textContent=msg; document.getElementById('appScreen').prepend(d); setTimeout(()=>d.remove(),3000); }
+// ===== NOVO: Modal Centralizado =====
+function exibirAviso(titulo, mensagem, tipo = 'erro') {
+    const modal = document.getElementById('avisoModal');
+    const icon = document.getElementById('avisoIcon');
+    const title = document.getElementById('avisoTitle');
+    const msg = document.getElementById('avisoMessage');
+    if (tipo === 'sucesso') {
+        icon.textContent = '✅';
+        title.style.color = '#059669';
+    } else {
+        icon.textContent = '⚠️';
+        title.style.color = '#dc2626';
+    }
+    title.textContent = titulo;
+    msg.textContent = mensagem;
+    modal.classList.remove('hidden');
+}
+
+function fecharAviso() {
+    document.getElementById('avisoModal').classList.add('hidden');
+}
+
+// Substituímos as antigas funções showErrorApp e showSuccessApp por exibirAviso
+function showErrorApp(msg) { exibirAviso('Erro', msg, 'erro'); }
+function showSuccessApp(msg) { exibirAviso('Sucesso', msg, 'sucesso'); }
+
+// Para compatibilidade com o código existente, mantemos showError para autenticação (toast)
 function showError(msg) { let div=document.getElementById('errorMsg'); div.textContent=msg; div.classList.remove('hidden'); setTimeout(()=>div.classList.add('hidden'),3000); }
+
 function copiarTexto(texto) { navigator.clipboard.writeText(texto); showSuccessApp("✅ Copiado!"); }
 
 function atualizarSaldo() { if(currentUser && usersDB[currentUser]) document.getElementById('saldoValor').innerText = usersDB[currentUser].saldo.toLocaleString('pt-AO'); }
@@ -674,17 +750,14 @@ function logout() {
 }
 
 // ============================================================
-//  VALIDAÇÃO DE HORÁRIO (08:00 - 17:59)
+//  VALIDAÇÃO DE HORÁRIO (agora todos os dias, apenas 08:00-17:59)
 // ============================================================
 function validarHorario() {
     const agora = new Date();
     const hora = agora.getHours();
     const minuto = agora.getMinutes();
-    // Dias úteis? Vamos permitir todos os dias (segunda a domingo) para simplificar, 
-    // mas podemos limitar a dias úteis se quiser. O pedido não especificou dias, apenas horas.
-    // Vamos permitir todos os dias.
+    // Permite todos os dias (segunda a domingo)
     if (hora >= 8 && hora <= 17) {
-        // Se for 17:00, ainda permitimos até 17:59. Na prática, 17:59 é permitido.
         if (hora === 17 && minuto > 59) {
             return { valido: false, mensagem: "Horário de funcionamento: 08:00 às 17:59" };
         }
@@ -731,7 +804,7 @@ async function solicitarDepositoWhatsApp() {
         referencia: referencia,
         data: new Date().toISOString(),
         status: 'pendente',
-        hasComprovante: false  // não há upload, apenas WhatsApp
+        hasComprovante: false
     };
     
     if (!user.depositos) user.depositos = [];
@@ -740,7 +813,6 @@ async function solicitarDepositoWhatsApp() {
     
     // Número de WhatsApp do suporte (sem +)
     const numeroSuporte = '244949097324';
-    // Mensagem personalizada
     const mensagem = `Olá, sou ${user.nome} (${user.phone}), solicito depósito de ${valor.toLocaleString('pt-AO')} Kz. Código da operação: ${referencia}. Segue em anexo o comprovativo.`;
     const url = `https://wa.me/${numeroSuporte}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
@@ -765,7 +837,6 @@ function renderizarHistoricoDepositos() {
         return;
     }
     container.innerHTML = '';
-    // Mostrar do mais recente para o mais antigo
     const depositosOrdenados = [...user.depositos].reverse();
     depositosOrdenados.forEach(dep => {
         const div = document.createElement('div');
@@ -848,7 +919,6 @@ async function aprovarDepositoAdmin(phone, id, valor) {
     });
     await saveData();
     
-    // Atualizar interfaces
     renderizarAdminDepositos();
     if (currentUser === phone) {
         atualizarSaldo();
@@ -1114,7 +1184,6 @@ function renderizarAdminChat() {
     const container = document.getElementById('adminChatSection');
     if(!container) return;
     
-    // --- Parte 1: Lista de conversas existentes ---
     const conversas = new Map();
     mensagensChat.forEach(msg => {
         const outroUsuario = msg.usuario === 'admin' ? msg.usuarioDestino : msg.usuario;
@@ -1126,7 +1195,6 @@ function renderizarAdminChat() {
     
     let html = '';
     
-    // --- Seletor e formulário para enviar mensagem para QUALQUER usuário ---
     html += `
         <div class="admin-card" style="border-left-color: #2563eb; background: #eff6ff;">
             <div style="font-weight:700; color:#1e3a8a; margin-bottom:10px;">📨 Enviar mensagem para qualquer usuário</div>
@@ -1144,15 +1212,9 @@ function renderizarAdminChat() {
         </div>
     `;
     
-    // Preencher o seletor com todos os usuários (exceto admin)
-    const userSelect = document.createElement('select');
-    userSelect.id = 'adminUserSelectorTemp'; // apenas para preencher
-    // Mas como o HTML já foi injetado, vamos preencher via JS após renderizar
-    // Vamos usar um setTimeout ou fazer diretamente depois
     setTimeout(() => {
         const select = document.getElementById('adminUserSelector');
         if(select) {
-            // Manter a opção padrão
             select.innerHTML = '<option value="">-- Escolha um usuário --</option>';
             for(let phone in usersDB) {
                 const user = usersDB[phone];
@@ -1166,7 +1228,6 @@ function renderizarAdminChat() {
         }
     }, 0);
     
-    // --- Lista de conversas existentes ---
     if(conversas.size === 0) {
         html += '<div style="color:#64748b;padding:20px;text-align:center;margin-top:10px;">Nenhuma conversa ainda</div>';
     } else {
@@ -1194,7 +1255,6 @@ function renderizarAdminChat() {
     container.innerHTML = html;
 }
 
-// Nova função: enviar mensagem do admin diretamente para qualquer usuário (selecionado no dropdown)
 async function enviarMensagemAdminDireta() {
     const select = document.getElementById('adminUserSelector');
     const phone = select ? select.value : '';
@@ -1209,7 +1269,6 @@ async function enviarMensagemAdminDireta() {
         return;
     }
     
-    // Verifica se o usuário existe
     if(!usersDB[phone]) {
         alert('Usuário não encontrado.');
         return;
@@ -1226,23 +1285,18 @@ async function enviarMensagemAdminDireta() {
     });
     await saveData();
     
-    // Limpar campo
     document.getElementById('adminDirectMessage').value = '';
-    // Manter o select no mesmo valor (opcional)
     showSuccessApp(`✅ Mensagem enviada para ${usersDB[phone].nome}`);
     
-    // Atualizar a lista de conversas e o badge do usuário (se ele estiver logado)
     if(currentUser === phone) {
         atualizarBadgeChat();
         if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) {
             renderizarChat();
         }
     }
-    // Atualizar a aba chat do admin
     renderizarAdminChat();
 }
 
-// As funções existentes: apagarConversaAdmin, abrirConversaAdmin, etc. permanecem.
 function apagarConversaAdmin(phone) {
     if(confirm(`⚠️ Tem certeza que deseja apagar TODAS as mensagens da conversa com ${phone}?`)) {
         mensagensChat = mensagensChat.filter(msg => 
@@ -1595,7 +1649,7 @@ async function confirmarEnvio() {
 //  SAQUES
 // ============================================================
 async function solicitarSaque() {
-    // Verificar horário
+    // Verificar horário (agora todos os dias)
     const horario = validarHorario();
     if (!horario.valido) {
         showErrorApp(horario.mensagem);
@@ -1727,7 +1781,6 @@ async function verificarInvestimentosExpirados() {
 (async function init() {
     await loadData();
     verificarInvestimentosExpirados();
-    // Se não houver usuários, criar os padrão
     if(Object.keys(usersDB).length === 0) {
         usersDB = {
             "923456789": {id:"923456789", nome:"João Silva", phone:"923456789", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:null},
