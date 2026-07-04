@@ -88,6 +88,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
 .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; margin-top: 0; }
 .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
 .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+.btn-broadcast { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
 .saldo-box {
     background: linear-gradient(135deg, #eff6ff, #dbeafe);
     border-radius: 20px;
@@ -256,6 +257,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     margin-bottom: 15px;
     border-bottom: 1px solid #e2e8f0;
     padding-bottom: 10px;
+    flex-wrap: wrap;
 }
 .tab-admin-btn {
     flex: 1;
@@ -265,6 +267,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
+    min-width: 60px;
 }
 .tab-admin-btn.active { background: #2563eb; color: white; }
 .admin-section { display: none; }
@@ -608,11 +611,13 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
                 <button class="tab-admin-btn active" onclick="switchAdminTab('depositos')">📥 Depósitos</button>
                 <button class="tab-admin-btn" onclick="switchAdminTab('saques')">📤 Saques</button>
                 <button class="tab-admin-btn" onclick="switchAdminTab('chat')">💬 Chat</button>
+                <button class="tab-admin-btn" onclick="switchAdminTab('comunicado')">📢 Comunicado</button>
                 <button class="tab-admin-btn" onclick="switchAdminTab('limpar')">🗑️ Limpar</button>
             </div>
             <div id="adminDepositosSection" class="admin-section active"></div>
             <div id="adminSaquesSection" class="admin-section"></div>
             <div id="adminChatSection" class="admin-section"></div>
+            <div id="adminComunicadoSection" class="admin-section"></div>
             <div id="adminLimparSection" class="admin-section"></div>
             <button class="btn btn-outline btn-sm" onclick="fecharAdminPanel()" style="margin-top:15px;width:auto;display:block;margin-left:auto;margin-right:auto">Fechar</button>
         </div>
@@ -718,11 +723,9 @@ function fecharAviso() {
     document.getElementById('avisoModal').classList.add('hidden');
 }
 
-// Substituímos as antigas funções showErrorApp e showSuccessApp por exibirAviso
 function showErrorApp(msg) { exibirAviso('Erro', msg, 'erro'); }
 function showSuccessApp(msg) { exibirAviso('Sucesso', msg, 'sucesso'); }
 
-// Para compatibilidade com o código existente, mantemos showError para autenticação (toast)
 function showError(msg) { let div=document.getElementById('errorMsg'); div.textContent=msg; div.classList.remove('hidden'); setTimeout(()=>div.classList.add('hidden'),3000); }
 
 function copiarTexto(texto) { navigator.clipboard.writeText(texto); showSuccessApp("✅ Copiado!"); }
@@ -756,7 +759,6 @@ function validarHorario() {
     const agora = new Date();
     const hora = agora.getHours();
     const minuto = agora.getMinutes();
-    // Permite todos os dias (segunda a domingo)
     if (hora >= 8 && hora <= 17) {
         if (hora === 17 && minuto > 59) {
             return { valido: false, mensagem: "Horário de funcionamento: 08:00 às 17:59" };
@@ -775,7 +777,6 @@ async function solicitarDepositoWhatsApp() {
         showErrorApp('Faça login primeiro');
         return;
     }
-    // Verificar horário
     const horario = validarHorario();
     if (!horario.valido) {
         showErrorApp(horario.mensagem);
@@ -786,7 +787,6 @@ async function solicitarDepositoWhatsApp() {
     const valor = parseInt(document.getElementById('depositoValor').value);
     const referencia = document.getElementById('depositoReferencia').value.trim();
     
-    // Validar campos
     if (!valor || valor < 100) {
         showErrorApp('Preencha o valor (mínimo 100 Kz)');
         return;
@@ -796,7 +796,6 @@ async function solicitarDepositoWhatsApp() {
         return;
     }
     
-    // Criar registo de depósito pendente
     const depositoId = Date.now();
     const novoDeposito = {
         id: depositoId,
@@ -811,17 +810,14 @@ async function solicitarDepositoWhatsApp() {
     user.depositos.push(novoDeposito);
     await saveData();
     
-    // Número de WhatsApp do suporte (sem +)
     const numeroSuporte = '244949097324';
     const mensagem = `Olá, sou ${user.nome} (${user.phone}), solicito depósito de ${valor.toLocaleString('pt-AO')} Kz. Código da operação: ${referencia}. Segue em anexo o comprovativo.`;
     const url = `https://wa.me/${numeroSuporte}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
     
-    // Limpar campos
     document.getElementById('depositoValor').value = '';
     document.getElementById('depositoReferencia').value = '';
     
-    // Atualizar histórico de depósitos
     renderizarHistoricoDepositos();
     showSuccessApp('✅ Pedido enviado! Aguarde a confirmação manual.');
 }
@@ -946,7 +942,7 @@ async function rejeitarDepositoAdmin(phone, id) {
 }
 
 // ============================================================
-//  ADMIN - SAQUES (já existente)
+//  ADMIN - SAQUES
 // ============================================================
 function renderizarAdminSaques() {
     let saquesPend = [];
@@ -1178,7 +1174,7 @@ async function enviarMensagem() {
 }
 
 // ============================================================
-//  ADMIN - CHAT E LIMPEZA (com envio direto para qualquer usuário)
+//  ADMIN - CHAT E LIMPEZA
 // ============================================================
 function renderizarAdminChat() {
     const container = document.getElementById('adminChatSection');
@@ -1379,7 +1375,81 @@ async function enviarRespostaAdmin(phone) {
 }
 
 // ============================================================
-//  ADMIN - LIMPEZA (existente)
+//  ADMIN - COMUNICADO PARA TODOS OS USUÁRIOS (NOVO)
+// ============================================================
+function renderizarAdminComunicado() {
+    const container = document.getElementById('adminComunicadoSection');
+    if(!container) return;
+    container.innerHTML = `
+        <div class="card-title" style="font-size:18px;margin-bottom:15px;">📢 Enviar Comunicado para Todos</div>
+        <div class="admin-card" style="border-left-color:#8b5cf6; background:#f5f3ff;">
+            <p style="font-size:13px;color:#475569;margin-bottom:12px;">Esta mensagem será enviada para <strong>TODOS os usuários</strong> e aparecerá no chat de cada um com notificação.</p>
+            <div class="input-group" style="margin-bottom:12px;">
+                <textarea id="adminBroadcastMessage" rows="4" placeholder="Digite o comunicado aqui..." style="width:100%; padding:12px; border-radius:12px; border:1px solid #cbd5e1; background:white;"></textarea>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <button class="btn btn-broadcast" onclick="enviarComunicadoAdmin()">📢 Enviar para todos</button>
+            </div>
+            <div style="font-size:11px; color:#64748b; margin-top:8px;">⚠️ A mensagem será marcada como não lida para todos os usuários.</div>
+        </div>
+        <div id="broadcastStatus" style="margin-top:10px;"></div>
+    `;
+}
+
+async function enviarComunicadoAdmin() {
+    const texto = document.getElementById('adminBroadcastMessage')?.value.trim();
+    if(!texto) {
+        alert('Digite o conteúdo do comunicado.');
+        return;
+    }
+
+    const usuarios = Object.keys(usersDB);
+    if(usuarios.length === 0) {
+        alert('Nenhum usuário cadastrado para enviar.');
+        return;
+    }
+
+    if(!confirm(`📢 Enviar comunicado para ${usuarios.length} usuário(s)?\n\nMensagem: "${texto}"`)) {
+        return;
+    }
+
+    let count = 0;
+    const now = new Date().toISOString();
+    for(const phone of usuarios) {
+        const user = usersDB[phone];
+        if(!user) continue;
+        const mensagemId = Date.now() + count;
+        mensagensChat.push({
+            id: mensagemId,
+            usuario: 'admin',
+            usuarioDestino: phone,
+            texto: texto,
+            data: now,
+            lido: false
+        });
+        count++;
+    }
+
+    await saveData();
+    document.getElementById('adminBroadcastMessage').value = '';
+    const statusDiv = document.getElementById('broadcastStatus');
+    if(statusDiv) {
+        statusDiv.innerHTML = `<div style="background:#d1fae5;padding:12px;border-radius:12px;text-align:center;color:#059669;font-weight:600;">✅ Comunicado enviado para ${count} usuário(s)!</div>`;
+        setTimeout(() => { statusDiv.innerHTML = ''; }, 5000);
+    }
+    showSuccessApp(`📢 Comunicado enviado para ${count} usuários!`);
+    
+    // Se o admin estiver logado como um usuário, atualiza seu badge
+    if(currentUser) {
+        atualizarBadgeChat();
+        if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) {
+            renderizarChat();
+        }
+    }
+}
+
+// ============================================================
+//  ADMIN - LIMPEZA
 // ============================================================
 function renderizarAdminLimpar() {
     const container = document.getElementById('adminLimparSection');
@@ -1426,7 +1496,7 @@ async function apagarHistoricoCompleto() {
 }
 
 // ============================================================
-//  ADMIN - NAVEGAÇÃO
+//  ADMIN - NAVEGAÇÃO (ATUALIZADO)
 // ============================================================
 function verificarSenhaAdmin() {
     const senha = prompt("Digite a senha de administrador:");
@@ -1438,27 +1508,35 @@ function switchAdminTab(tab) {
     const depositosSection = document.getElementById('adminDepositosSection');
     const saquesSection = document.getElementById('adminSaquesSection');
     const chatSection = document.getElementById('adminChatSection');
+    const comunicadoSection = document.getElementById('adminComunicadoSection');
     const limparSection = document.getElementById('adminLimparSection');
     const btns = document.querySelectorAll('.tab-admin-btn');
     depositosSection.classList.remove('active');
     saquesSection.classList.remove('active');
     chatSection.classList.remove('active');
+    comunicadoSection.classList.remove('active');
     limparSection.classList.remove('active');
+    btns.forEach(btn => btn.classList.remove('active'));
+    
     if(tab === 'depositos') {
         depositosSection.classList.add('active');
-        btns[0].classList.add('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active');
+        btns[0].classList.add('active');
         renderizarAdminDepositos();
     } else if(tab === 'saques') {
         saquesSection.classList.add('active');
-        btns[0].classList.remove('active'); btns[1].classList.add('active'); btns[2].classList.remove('active'); btns[3].classList.remove('active');
+        btns[1].classList.add('active');
         renderizarAdminSaques();
     } else if(tab === 'chat') {
         chatSection.classList.add('active');
-        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.add('active'); btns[3].classList.remove('active');
+        btns[2].classList.add('active');
         renderizarAdminChat();
-    } else {
+    } else if(tab === 'comunicado') {
+        comunicadoSection.classList.add('active');
+        btns[3].classList.add('active');
+        renderizarAdminComunicado();
+    } else if(tab === 'limpar') {
         limparSection.classList.add('active');
-        btns[0].classList.remove('active'); btns[1].classList.remove('active'); btns[2].classList.remove('active'); btns[3].classList.add('active');
+        btns[4].classList.add('active');
         renderizarAdminLimpar();
     }
 }
@@ -1467,6 +1545,7 @@ function abrirAdminPanel() {
     renderizarAdminDepositos();
     renderizarAdminSaques();
     renderizarAdminChat();
+    renderizarAdminComunicado();
     renderizarAdminLimpar();
     document.getElementById('adminModal').classList.remove('hidden');
     document.getElementById('adminDepositosSection').classList.add('active');
@@ -1649,7 +1728,6 @@ async function confirmarEnvio() {
 //  SAQUES
 // ============================================================
 async function solicitarSaque() {
-    // Verificar horário (agora todos os dias)
     const horario = validarHorario();
     if (!horario.valido) {
         showErrorApp(horario.mensagem);
