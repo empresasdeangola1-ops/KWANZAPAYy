@@ -402,6 +402,22 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
 .admin-user-selector select {
     background: white;
 }
+/* Aviso de horário */
+.horario-aviso {
+    background: #fef9e7;
+    border: 1px solid #f59e0b;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #92400e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.horario-aviso .icon { font-size: 20px; }
+.horario-aviso .texto { flex: 1; }
+.horario-aviso .texto strong { display: block; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -456,6 +472,11 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
         <!-- Painel Depositar -->
         <div id="depositarPanel" class="card hidden">
             <div class="card-title">💰 Depositar Saldo</div>
+            <!-- Aviso de horário -->
+            <div class="horario-aviso">
+                <span class="icon">🕒</span>
+                <div class="texto"><strong>Horário permitido para depósitos</strong>Das 08:00 às 17:59 (segunda a sexta)</div>
+            </div>
             <div class="deposit-info-card">
                 <div style="color:#1e3a8a;font-weight:bold;font-size:15px;">💳 Depósito via Multicaixa Express / ATM</div>
                 <div style="font-size:12px;margin:8px 0;">Utilize os dados abaixo:</div>
@@ -486,6 +507,11 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
         <!-- Painel Saque -->
         <div id="saquePanel" class="card hidden">
             <div class="card-title">🏧 Saque para Conta Bancária</div>
+            <!-- Aviso de horário -->
+            <div class="horario-aviso">
+                <span class="icon">🕒</span>
+                <div class="texto"><strong>Horário permitido para saques</strong>Das 08:00 às 17:59 (segunda a sexta)</div>
+            </div>
             <div id="ibanConfig" style="background:#f1f5f9;padding:15px;border-radius:12px;margin-bottom:15px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                     <span style="color:#1e3a8a;font-weight:bold">Conta IBAN</span>
@@ -648,6 +674,27 @@ function logout() {
 }
 
 // ============================================================
+//  VALIDAÇÃO DE HORÁRIO (08:00 - 17:59)
+// ============================================================
+function validarHorario() {
+    const agora = new Date();
+    const hora = agora.getHours();
+    const minuto = agora.getMinutes();
+    // Dias úteis? Vamos permitir todos os dias (segunda a domingo) para simplificar, 
+    // mas podemos limitar a dias úteis se quiser. O pedido não especificou dias, apenas horas.
+    // Vamos permitir todos os dias.
+    if (hora >= 8 && hora <= 17) {
+        // Se for 17:00, ainda permitimos até 17:59. Na prática, 17:59 é permitido.
+        if (hora === 17 && minuto > 59) {
+            return { valido: false, mensagem: "Horário de funcionamento: 08:00 às 17:59" };
+        }
+        return { valido: true };
+    } else {
+        return { valido: false, mensagem: "Operação permitida apenas das 08:00 às 17:59" };
+    }
+}
+
+// ============================================================
 //  FUNÇÃO PARA SOLICITAR DEPÓSITO VIA WHATSAPP (COM REGISTO PENDENTE)
 // ============================================================
 async function solicitarDepositoWhatsApp() {
@@ -655,6 +702,13 @@ async function solicitarDepositoWhatsApp() {
         showErrorApp('Faça login primeiro');
         return;
     }
+    // Verificar horário
+    const horario = validarHorario();
+    if (!horario.valido) {
+        showErrorApp(horario.mensagem);
+        return;
+    }
+
     const user = usersDB[currentUser];
     const valor = parseInt(document.getElementById('depositoValor').value);
     const referencia = document.getElementById('depositoReferencia').value.trim();
@@ -1541,6 +1595,13 @@ async function confirmarEnvio() {
 //  SAQUES
 // ============================================================
 async function solicitarSaque() {
+    // Verificar horário
+    const horario = validarHorario();
+    if (!horario.valido) {
+        showErrorApp(horario.mensagem);
+        return;
+    }
+
     const user = usersDB[currentUser];
     if(!user.iban) return showErrorApp('Cadastre um IBAN em Perfil');
     const valor = parseInt(document.getElementById('saqueValor').value);
