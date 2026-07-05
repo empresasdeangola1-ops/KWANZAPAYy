@@ -461,6 +461,47 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     line-height: 1.5;
 }
 .aviso-content .btn { width: 100%; }
+
+/* Tabela de investimentos */
+.invest-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+.invest-table th {
+    background: #1e3a8a;
+    color: white;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 12px;
+}
+.invest-table td {
+    padding: 10px 6px;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+.invest-table tr:nth-child(even) td {
+    background: #f8fafc;
+}
+.invest-table .btn-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+    margin: 0;
+}
+.invest-table .valor {
+    font-weight: 700;
+    color: #1e3a8a;
+}
+.invest-table .retorno {
+    font-weight: 700;
+    color: #059669;
+}
+.invest-table .lucro {
+    font-weight: 600;
+    color: #f59e0b;
+}
 </style>
 </head>
 <body>
@@ -515,7 +556,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
         <!-- Painel Depositar -->
         <div id="depositarPanel" class="card hidden">
             <div class="card-title">💰 Depositar Saldo</div>
-            <!-- Aviso de horário (informativo) -->
             <div class="horario-aviso">
                 <span class="icon">🕒</span>
                 <div class="texto"><strong>Horário permitido para depósitos</strong>08:00 às 17:59 (todos os dias)</div>
@@ -531,7 +571,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <div class="input-group"><label>💰 Valor (Kz)</label><input type="number" id="depositoValor" placeholder="Ex: 10000"></div>
             <div class="input-group"><label>📝 Código da operação</label><input type="text" id="depositoReferencia" placeholder="Código fornecido pelo ATM"></div>
             
-            <!-- Botão para solicitar depósito via WhatsApp -->
             <div class="whatsapp-row">
                 <button class="btn btn-whatsapp" onclick="solicitarDepositoWhatsApp()">📱 Solicitar Depósito via WhatsApp</button>
             </div>
@@ -550,7 +589,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
         <!-- Painel Saque -->
         <div id="saquePanel" class="card hidden">
             <div class="card-title">🏧 Saque para Conta Bancária</div>
-            <!-- Aviso de horário (informativo) -->
             <div class="horario-aviso">
                 <span class="icon">🕒</span>
                 <div class="texto"><strong>Horário permitido para saques</strong>08:00 às 17:59 (todos os dias)</div>
@@ -575,8 +613,14 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
         </div>
 
-        <!-- Painel Investir -->
-        <div id="investirPanel" class="card hidden"><div class="card-title">📈 Investimentos</div><div class="input-group"><label>Valor (Kz)</label><input type="number" id="investValor" placeholder="Mínimo 1000 Kz"></div><div class="input-group"><label>Prazo</label><select id="investPrazo"><option value="21">🎯 3 Semanas - 35%</option><option value="30">🚀 1 Mês - 45%</option><option value="60">💎 2 Meses - 85%</option></select></div><button class="btn btn-primary" onclick="realizarInvestimento()">Investir Agora</button><div class="card-title" style="margin-top:20px">📊 Investimentos Ativos</div><div id="investimentosAtivosList" class="historico-container"><div style="text-align:center;color:#64748b;padding:20px">Nenhum investimento</div></div><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
+        <!-- Painel Investir (ATUALIZADO COM TABELA) -->
+        <div id="investirPanel" class="card hidden">
+            <div class="card-title">📈 Planos de Investimento</div>
+            <div id="tabelaPlanosContainer"></div>
+            <div class="card-title" style="margin-top:20px">📊 Meus Investimentos Ativos</div>
+            <div id="investimentosAtivosList" class="historico-container"><div style="text-align:center;color:#64748b;padding:20px">Nenhum investimento ativo</div></div>
+            <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
+        </div>
 
         <!-- Painel Histórico -->
         <div id="historicoPanel" class="card hidden"><div class="card-title">📋 Histórico</div><div id="historicoList" class="historico-container"></div><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
@@ -662,7 +706,21 @@ let mensagensChat = [];
 let currentUser = null;
 let pendingTransfer = null;
 let timerInterval = null;
-const RENDIMENTOS = {21:35, 30:45, 60:85};
+
+// ============================================================
+//  PLANOS DE INVESTIMENTO (NOVA TABELA)
+// ============================================================
+const PLANOS_INVESTIMENTO = [
+    { valor: 1000,  dias: 3,  retorno: 3600,  descricao: "3 dias" },
+    { valor: 5000,  dias: 7,  retorno: 10080, descricao: "7 dias" },
+    { valor: 10000, dias: 30, retorno: 18500, descricao: "1 mês" },
+    { valor: 20000, dias: 30, retorno: 35000, descricao: "1 mês" },
+    { valor: 20000, dias: 60, retorno: 63000, descricao: "2 meses" },
+    { valor: 30000, dias: 30, retorno: 51000, descricao: "1 mês" },
+    { valor: 30000, dias: 60, retorno: 92000, descricao: "2 meses" },
+    { valor: 40000, dias: 30, retorno: 71000, descricao: "1 mês" },
+    { valor: 40000, dias: 60, retorno: 125000, descricao: "2 meses" }
+];
 
 // ============================================================
 //  FUNÇÕES DE PERSISTÊNCIA (Firebase)
@@ -701,7 +759,6 @@ function normalizePhone(phone) {
     return null;
 }
 
-// ===== NOVO: Modal Centralizado =====
 function exibirAviso(titulo, mensagem, tipo = 'erro') {
     const modal = document.getElementById('avisoModal');
     const icon = document.getElementById('avisoIcon');
@@ -753,7 +810,7 @@ function logout() {
 }
 
 // ============================================================
-//  VALIDAÇÃO DE HORÁRIO (agora todos os dias, apenas 08:00-17:59)
+//  VALIDAÇÃO DE HORÁRIO (08:00-17:59)
 // ============================================================
 function validarHorario() {
     const agora = new Date();
@@ -770,7 +827,7 @@ function validarHorario() {
 }
 
 // ============================================================
-//  FUNÇÃO PARA SOLICITAR DEPÓSITO VIA WHATSAPP (COM REGISTO PENDENTE)
+//  SOLICITAR DEPÓSITO VIA WHATSAPP
 // ============================================================
 async function solicitarDepositoWhatsApp() {
     if (!currentUser) {
@@ -822,9 +879,6 @@ async function solicitarDepositoWhatsApp() {
     showSuccessApp('✅ Pedido enviado! Aguarde a confirmação manual.');
 }
 
-// ============================================================
-//  RENDERIZAÇÃO DO HISTÓRICO DE DEPÓSITOS (UTILIZADOR)
-// ============================================================
 function renderizarHistoricoDepositos() {
     const user = usersDB[currentUser];
     const container = document.getElementById('historicoDepositosList');
@@ -852,7 +906,7 @@ function renderizarHistoricoDepositos() {
 }
 
 // ============================================================
-//  ADMIN - DEPÓSITOS PENDENTES (COM APROVAÇÃO/REJEIÇÃO)
+//  ADMIN - DEPÓSITOS
 // ============================================================
 function renderizarAdminDepositos() {
     const container = document.getElementById('adminDepositosSection');
@@ -1088,7 +1142,7 @@ function criarTimerElemento(investimento) {
 }
 
 // ============================================================
-//  CHAT (somente texto, sem arquivos)
+//  CHAT
 // ============================================================
 function showChat() {
     hideAllPanels();
@@ -1174,7 +1228,7 @@ async function enviarMensagem() {
 }
 
 // ============================================================
-//  ADMIN - CHAT E LIMPEZA
+//  ADMIN - CHAT, COMUNICADO, LIMPEZA
 // ============================================================
 function renderizarAdminChat() {
     const container = document.getElementById('adminChatSection');
@@ -1375,7 +1429,7 @@ async function enviarRespostaAdmin(phone) {
 }
 
 // ============================================================
-//  ADMIN - COMUNICADO PARA TODOS OS USUÁRIOS (NOVO)
+//  ADMIN - COMUNICADO PARA TODOS
 // ============================================================
 function renderizarAdminComunicado() {
     const container = document.getElementById('adminComunicadoSection');
@@ -1439,7 +1493,6 @@ async function enviarComunicadoAdmin() {
     }
     showSuccessApp(`📢 Comunicado enviado para ${count} usuários!`);
     
-    // Se o admin estiver logado como um usuário, atualiza seu badge
     if(currentUser) {
         atualizarBadgeChat();
         if(document.getElementById('chatPanel') && !document.getElementById('chatPanel').classList.contains('hidden')) {
@@ -1496,7 +1549,7 @@ async function apagarHistoricoCompleto() {
 }
 
 // ============================================================
-//  ADMIN - NAVEGAÇÃO (ATUALIZADO)
+//  ADMIN - NAVEGAÇÃO
 // ============================================================
 function verificarSenhaAdmin() {
     const senha = prompt("Digite a senha de administrador:");
@@ -1556,42 +1609,113 @@ function fecharAdminPanel(){ document.getElementById('adminModal').classList.add
 function fecharModalComprovante() { document.getElementById('modalComprovante').classList.add('hidden'); }
 
 // ============================================================
-//  INVESTIMENTOS
+//  INVESTIMENTOS (NOVA VERSÃO COM TABELA)
 // ============================================================
-async function realizarInvestimento() {
-    const valor = parseInt(document.getElementById('investValor').value);
-    const prazoDias = parseInt(document.getElementById('investPrazo').value);
-    const rendimento = RENDIMENTOS[prazoDias];
-    const planoNome = prazoDias===21 ? '3 Semanas (35%)' : (prazoDias===30 ? '1 Mês (45%)' : '2 Meses (85%)');
-    if(isNaN(valor) || valor < 1000) return showErrorApp('Valor mínimo: 1.000 Kz');
+
+// Renderiza a tabela de planos
+function renderizarPlanosInvestimento() {
+    const container = document.getElementById('tabelaPlanosContainer');
+    if (!container) return;
+    
+    let html = `
+        <div style="overflow-x:auto; margin-bottom:10px;">
+            <table class="invest-table">
+                <thead>
+                    <tr>
+                        <th>Investimento</th>
+                        <th>Período</th>
+                        <th>Retorno Total</th>
+                        <th>Lucro</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    PLANOS_INVESTIMENTO.forEach((plano, index) => {
+        const lucro = plano.retorno - plano.valor;
+        const percentual = Math.round((lucro / plano.valor) * 100);
+        html += `
+            <tr>
+                <td class="valor">${plano.valor.toLocaleString('pt-AO')} Kz</td>
+                <td>${plano.descricao}</td>
+                <td class="retorno">${plano.retorno.toLocaleString('pt-AO')} Kz</td>
+                <td class="lucro">+${lucro.toLocaleString('pt-AO')} Kz (${percentual}%)</td>
+                <td><button class="btn btn-success btn-sm" onclick="investirPlano(${index})">Investir</button></td>
+            </tr>
+        `;
+    });
+    
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+}
+
+// Função chamada ao clicar em "Investir" na tabela
+async function investirPlano(index) {
+    if (!currentUser) {
+        showErrorApp('Faça login primeiro');
+        return;
+    }
+    
+    const plano = PLANOS_INVESTIMENTO[index];
+    if (!plano) return;
+    
     const user = usersDB[currentUser];
-    if(valor > user.saldo) return showErrorApp('Saldo insuficiente');
+    if (!user) return;
+    
+    // Verifica saldo
+    if (user.saldo < plano.valor) {
+        showErrorApp(`Saldo insuficiente. Você precisa de ${plano.valor.toLocaleString('pt-AO')} Kz para este plano.`);
+        return;
+    }
+    
+    // Confirmar investimento
+    if (!confirm(`📈 Confirmar investimento de ${plano.valor.toLocaleString('pt-AO')} Kz no plano de ${plano.descricao}?\n\nRetorno total: ${plano.retorno.toLocaleString('pt-AO')} Kz\nLucro: ${(plano.retorno - plano.valor).toLocaleString('pt-AO')} Kz`)) {
+        return;
+    }
+    
+    // Realizar investimento
     const dataResgate = new Date();
-    dataResgate.setDate(dataResgate.getDate() + prazoDias);
-    user.saldo -= valor;
-    if(!user.investimentos) user.investimentos = [];
+    dataResgate.setDate(dataResgate.getDate() + plano.dias);
+    
+    user.saldo -= plano.valor;
+    if (!user.investimentos) user.investimentos = [];
     user.investimentos.push({
-        id: Date.now(), valor, plano: planoNome, prazoDias, rendimento,
-        totalResgate: valor + (valor * rendimento / 100),
+        id: Date.now(),
+        valor: plano.valor,
+        plano: `${plano.valor.toLocaleString('pt-AO')} Kz - ${plano.descricao}`,
+        prazoDias: plano.dias,
+        rendimento: Math.round(((plano.retorno - plano.valor) / plano.valor) * 100),
+        totalResgate: plano.retorno,
         dataInicio: new Date().toISOString(),
         dataResgate: dataResgate.toISOString(),
         status: 'ativo'
     });
-    if(!user.historico) user.historico = [];
-    user.historico.push({tipo:"enviado", valor, descricao:`Investimento: ${planoNome}`, data:new Date().toISOString()});
+    
+    if (!user.historico) user.historico = [];
+    user.historico.push({
+        tipo: "enviado",
+        valor: plano.valor,
+        descricao: `Investimento: ${plano.valor.toLocaleString('pt-AO')} Kz - ${plano.descricao}`,
+        data: new Date().toISOString()
+    });
+    
     await saveData();
     atualizarSaldo();
     renderizarInvestimentos();
-    document.getElementById('investValor').value = '';
-    showSuccessApp(`✅ Investimento de ${valor.toLocaleString('pt-AO')} Kz realizado!`);
+    showSuccessApp(`✅ Investimento de ${plano.valor.toLocaleString('pt-AO')} Kz realizado com sucesso!`);
 }
 
+// Renderiza os investimentos ativos do usuário (usado em vários lugares)
 function renderizarInvestimentos() {
     const user = usersDB[currentUser];
-    if(!user) return;
+    if (!user) return;
+    
     const ativos = (user.investimentos || []).filter(i => i.status === 'ativo');
+    
+    // Resumo na tela principal
     const resumoDiv = document.getElementById('resumoInvestimentosAtivos');
-    if(ativos.length === 0) {
+    if (ativos.length === 0) {
         resumoDiv.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">💼 Nenhum investimento ativo</div>';
     } else {
         resumoDiv.innerHTML = '';
@@ -1600,7 +1724,7 @@ function renderizarInvestimentos() {
             const agora = new Date();
             const diffMs = dataResgate - agora;
             let diasRestantes = 0;
-            if(diffMs > 0) diasRestantes = Math.ceil(diffMs / (1000*60*60*24));
+            if (diffMs > 0) diasRestantes = Math.ceil(diffMs / (1000*60*60*24));
             const progresso = Math.min(100, ((inv.prazoDias - diasRestantes) / inv.prazoDias) * 100);
             const timerHtml = criarTimerElemento(inv);
             const card = document.createElement('div');
@@ -1615,9 +1739,12 @@ function renderizarInvestimentos() {
             resumoDiv.appendChild(card);
         });
     }
+    
+    // Lista detalhada no painel Investir
     const ativosDiv = document.getElementById('investimentosAtivosList');
-    if(ativos.length === 0) ativosDiv.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Nenhum investimento ativo</div>';
-    else {
+    if (ativos.length === 0) {
+        ativosDiv.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Nenhum investimento ativo</div>';
+    } else {
         ativosDiv.innerHTML = '';
         ativos.forEach(inv => {
             const timerHtml = criarTimerElemento(inv);
@@ -1816,7 +1943,12 @@ function renderizarHistorico(){
 // ============================================================
 function showDepositar(){ hideAllPanels(); document.getElementById('depositarPanel').classList.remove('hidden'); renderizarHistoricoDepositos(); }
 function showEnviar(){ hideAllPanels(); document.getElementById('enviarPanel').classList.remove('hidden'); }
-function showInvestir(){ hideAllPanels(); document.getElementById('investirPanel').classList.remove('hidden'); renderizarInvestimentos(); }
+function showInvestir(){ 
+    hideAllPanels(); 
+    document.getElementById('investirPanel').classList.remove('hidden'); 
+    renderizarPlanosInvestimento(); 
+    renderizarInvestimentos(); 
+}
 function showSaque(){ 
     hideAllPanels(); 
     document.getElementById('saquePanel').classList.remove('hidden'); 
