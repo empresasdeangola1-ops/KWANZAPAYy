@@ -1609,7 +1609,7 @@ function fecharAdminPanel(){ document.getElementById('adminModal').classList.add
 function fecharModalComprovante() { document.getElementById('modalComprovante').classList.add('hidden'); }
 
 // ============================================================
-//  INVESTIMENTOS (NOVA VERSÃO COM TABELA)
+//  INVESTIMENTOS (NOVA VERSÃO COM TABELA E LUCRO POR HORA)
 // ============================================================
 
 // Renderiza a tabela de planos
@@ -1678,6 +1678,15 @@ async function investirPlano(index) {
     const dataResgate = new Date();
     dataResgate.setDate(dataResgate.getDate() + plano.dias);
     
+    // Calcula lucro por hora (apenas para planos de 30 ou 60 dias)
+    let lucroPorHora = 0;
+    let isHourly = (plano.dias === 30 || plano.dias === 60);
+    if (isHourly) {
+        const totalHoras = plano.dias * 24;
+        const lucroTotal = plano.retorno - plano.valor;
+        lucroPorHora = Math.floor(lucroTotal / totalHoras); // valor inteiro por hora
+    }
+    
     user.saldo -= plano.valor;
     if (!user.investimentos) user.investimentos = [];
     user.investimentos.push({
@@ -1689,7 +1698,10 @@ async function investirPlano(index) {
         totalResgate: plano.retorno,
         dataInicio: new Date().toISOString(),
         dataResgate: dataResgate.toISOString(),
-        status: 'ativo'
+        status: 'ativo',
+        lucroPorHora: lucroPorHora,      // 0 se não for hourly
+        creditoAcumulado: 0,              // quanto já foi creditado do lucro
+        ultimoCredito: new Date().toISOString() // timestamp do último crédito
     });
     
     if (!user.historico) user.historico = [];
@@ -1727,12 +1739,25 @@ function renderizarInvestimentos() {
             if (diffMs > 0) diasRestantes = Math.ceil(diffMs / (1000*60*60*24));
             const progresso = Math.min(100, ((inv.prazoDias - diasRestantes) / inv.prazoDias) * 100);
             const timerHtml = criarTimerElemento(inv);
+            
+            // Mostra informações de lucro por hora se aplicável
+            let infoExtra = '';
+            if (inv.lucroPorHora > 0) {
+                const lucroTotal = inv.totalResgate - inv.valor;
+                const creditado = inv.creditoAcumulado || 0;
+                const restante = lucroTotal - creditado;
+                infoExtra = `<div style="font-size:12px; color:#475569; margin-top:4px;">
+                                ⏱️ Lucro por hora: ${inv.lucroPorHora} Kz | Já creditado: ${creditado.toLocaleString('pt-AO')} Kz | Restante: ${restante.toLocaleString('pt-AO')} Kz
+                            </div>`;
+            }
+            
             const card = document.createElement('div');
             card.className = 'invest-card-resumo';
             card.innerHTML = `
                 <div><strong>📊 ${inv.plano}</strong></div>
                 <div>💰 Valor: ${inv.valor.toLocaleString('pt-AO')} Kz</div>
                 <div>📈 Rendimento: ${inv.rendimento}% → ${inv.totalResgate.toLocaleString('pt-AO')} Kz</div>
+                ${infoExtra}
                 ${timerHtml}
                 <div class="progress-bar"><div class="progress-fill" style="width:${progresso}%"></div></div>
             `;
@@ -1748,16 +1773,124 @@ function renderizarInvestimentos() {
         ativosDiv.innerHTML = '';
         ativos.forEach(inv => {
             const timerHtml = criarTimerElemento(inv);
+            let infoExtra = '';
+            if (inv.lucroPorHora > 0) {
+                const lucroTotal = inv.totalResgate - inv.valor;
+                const creditado = inv.creditoAcumulado || 0;
+                const restante = lucroTotal - creditado;
+                infoExtra = `<div style="font-size:12px; color:#475569; margin-top:4px;">
+                                ⏱️ Lucro por hora: ${inv.lucroPorHora} Kz | Já creditado: ${creditado.toLocaleString('pt-AO')} Kz | Restante: ${restante.toLocaleString('pt-AO')} Kz
+                            </div>`;
+            }
             const div = document.createElement('div');
             div.className = 'invest-item';
             div.innerHTML = `
                 <div><strong>${inv.plano}</strong></div>
                 <div>💰 ${inv.valor.toLocaleString('pt-AO')} Kz → +${inv.rendimento}% = ${inv.totalResgate.toLocaleString('pt-AO')} Kz</div>
+                ${infoExtra}
                 ${timerHtml}
             `;
             ativosDiv.appendChild(div);
         });
     }
+}
+
+// ============================================================
+//  VERIFICAR INVESTIMENTOS EXPIRADOS E CRÉDITO POR HORA
+// ============================================================
+async function verificarInvestimentosExpirados() {
+    let changed = false;
+    const agora = new Date();
+    
+    for(let phone in usersDB) {
+        const user = usersDB[phone];
+        if(user.investimentos) {
+            for(let inv of user.investimentos) {
+                if(inv.status !== 'ativo') continue;
+                
+                const dataResgate = new Date(inv.dataResgate);
+                const dataUltimoCredito = inv.ultimoCredito ? new Date(inv.ultimoCredito) : new Date(inv.dataInicio);
+                const horasPassadas = Math.floor((agora - dataUltimoCredito) / (1000 * 60 * 60));
+                
+                // Se for plano com lucro por hora (30 ou 60 dias)
+                if (inv.lucroPorHora > 0 && horasPassadas >= 1) {
+                    const lucroTotal = inv.totalResgate - inv.valor;
+                    const creditado = inv.creditoAcumulado || 0;
+                    let lucroRestante = lucroTotal - creditado;
+                    
+                    // Quantas horas podemos creditar agora (sem ultrapassar o lucro total)
+                    let horasCreditar = Math.min(horasPassadas, Math.floor(lucroRestante / inv.lucroPorHora));
+                    if (horasCreditar > 0) {
+                        const credito = horasCreditar * inv.lucroPorHora;
+                        inv.creditoAcumulado = (inv.creditoAcumulado || 0) + credito;
+                        user.saldo += credito;
+                        // Registra no histórico (opcional, mas pode gerar muitos registros)
+                        if (!user.historico) user.historico = [];
+                        user.historico.push({
+                            tipo: "recebido",
+                            valor: credito,
+                            descricao: `💰 Lucro por hora de investimento: ${inv.plano} (${horasCreditar}h)`,
+                            data: new Date().toISOString()
+                        });
+                        inv.ultimoCredito = agora.toISOString();
+                        changed = true;
+                    }
+                }
+                
+                // Verifica se o investimento expirou
+                if (dataResgate <= agora) {
+                    // Se ainda não foi resgatado e tem lucro por hora, credita o restante do lucro
+                    if (inv.lucroPorHora > 0) {
+                        const lucroTotal = inv.totalResgate - inv.valor;
+                        const creditado = inv.creditoAcumulado || 0;
+                        const restante = lucroTotal - creditado;
+                        if (restante > 0) {
+                            inv.creditoAcumulado = (inv.creditoAcumulado || 0) + restante;
+                            user.saldo += restante;
+                            if (!user.historico) user.historico = [];
+                            user.historico.push({
+                                tipo: "recebido",
+                                valor: restante,
+                                descricao: `💰 Saldo final de lucro de investimento: ${inv.plano}`,
+                                data: new Date().toISOString()
+                            });
+                            changed = true;
+                        }
+                    }
+                    
+                    // Marca como resgatado
+                    inv.status = 'resgatado';
+                    // Se não for hourly, já creditamos o total no resgate (mantido para compatibilidade)
+                    if (inv.lucroPorHora === 0) {
+                        // Para planos sem hourly, credita o totalResgate (já foi descontado o valor inicial)
+                        // Mas cuidado: o saldo já foi debitado no momento do investimento, então creditamos o totalResgate
+                        // Se o investimento não for hourly, o lucro é creditado de uma vez
+                        // Verifica se já não foi creditado (evitar duplicidade)
+                        // Usamos o campo "creditoAcumulado" para saber se já foi creditado
+                        if (!inv.creditoAcumulado || inv.creditoAcumulado === 0) {
+                            user.saldo += inv.totalResgate; // totalResgate inclui o valor investido + lucro
+                            inv.creditoAcumulado = inv.totalResgate;
+                            if (!user.historico) user.historico = [];
+                            user.historico.push({
+                                tipo: "recebido",
+                                valor: inv.totalResgate,
+                                descricao: `💰 Resgate de investimento: ${inv.plano}`,
+                                data: new Date().toISOString()
+                            });
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if (changed) { 
+        await saveData(); 
+        if (currentUser) atualizarSaldo(); 
+    }
+    if (currentUser) atualizarBadgeChat();
+    setTimeout(verificarInvestimentosExpirados, 5000);
 }
 
 // ============================================================
@@ -1962,35 +2095,11 @@ function showSuporte(){ hideAllPanels(); document.getElementById('suportePanel')
 function showPitch(){ hideAllPanels(); document.getElementById('pitchPanel').classList.remove('hidden'); }
 
 // ============================================================
-//  VERIFICAR INVESTIMENTOS EXPIRADOS
-// ============================================================
-async function verificarInvestimentosExpirados() {
-    let changed = false;
-    for(let phone in usersDB) {
-        const user = usersDB[phone];
-        if(user.investimentos) {
-            user.investimentos.forEach(inv => {
-                if(inv.status === 'ativo' && new Date(inv.dataResgate) <= new Date()) {
-                    inv.status = 'resgatado';
-                    user.saldo += inv.totalResgate;
-                    if(!user.historico) user.historico = [];
-                    user.historico.push({tipo:"recebido", valor:inv.totalResgate, descricao:`💰 Resgate de investimento: ${inv.plano} - Lucro de ${(inv.totalResgate - inv.valor).toLocaleString('pt-AO')} Kz`, data:new Date().toISOString()});
-                    changed = true;
-                }
-            });
-        }
-    }
-    if(changed) { await saveData(); if(currentUser) atualizarSaldo(); }
-    if(currentUser) atualizarBadgeChat();
-    setTimeout(verificarInvestimentosExpirados, 5000);
-}
-
-// ============================================================
 //  INICIALIZAÇÃO
 // ============================================================
 (async function init() {
     await loadData();
-    verificarInvestimentosExpirados();
+    verificarInvestimentosExpirados(); // inicia o loop de verificação
     if(Object.keys(usersDB).length === 0) {
         usersDB = {
             "923456789": {id:"923456789", nome:"João Silva", phone:"923456789", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:null},
