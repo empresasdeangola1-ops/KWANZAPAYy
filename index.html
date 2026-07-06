@@ -462,33 +462,43 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
 }
 .aviso-content .btn { width: 100%; }
 
-/* Tabela de investimentos */
+/* ===== NOVOS ESTILOS PARA A TABELA DE INVESTIMENTOS (MAIS PROFISSIONAL) ===== */
+.invest-table-wrapper {
+    overflow-x: auto;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+}
 .invest-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
-    margin-bottom: 20px;
+    font-size: 14px;
+    background: white;
+}
+.invest-table thead tr {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: white;
 }
 .invest-table th {
-    background: #1e3a8a;
-    color: white;
-    padding: 10px 6px;
+    padding: 14px 10px;
     text-align: center;
-    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    font-size: 13px;
 }
 .invest-table td {
-    padding: 10px 6px;
+    padding: 12px 10px;
     text-align: center;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
 }
-.invest-table tr:nth-child(even) td {
+.invest-table tbody tr:nth-child(even) {
     background: #f8fafc;
 }
-.invest-table .btn-sm {
-    padding: 4px 10px;
-    font-size: 11px;
-    margin: 0;
+.invest-table tbody tr:hover {
+    background: #eff6ff;
+    transition: background 0.2s;
 }
 .invest-table .valor {
     font-weight: 700;
@@ -501,6 +511,59 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
 .invest-table .lucro {
     font-weight: 600;
     color: #f59e0b;
+}
+.invest-table .lucro-hora {
+    font-weight: 600;
+    color: #8b5cf6;
+}
+.invest-table .btn-sm {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 20px;
+    margin: 0;
+}
+.invest-table .badge-plano {
+    display: inline-block;
+    background: #e2e8f0;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+}
+.invest-table .badge-plano.destaque {
+    background: #dbeafe;
+    color: #1e3a8a;
+}
+.invest-table .periodo {
+    font-weight: 500;
+}
+.invest-table .tooltip-hora {
+    display: inline-block;
+    background: #f1f5f9;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #2563eb;
+    cursor: help;
+    margin-left: 4px;
+}
+.invest-table .tooltip-hora:hover {
+    background: #2563eb;
+    color: white;
+}
+@media (max-width: 480px) {
+    .invest-table th, .invest-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+    .invest-table .btn-sm {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
 }
 
 /* ===== NOVOS ESTILOS PARA OPÇÕES DE DEPÓSITO ===== */
@@ -690,10 +753,13 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
         </div>
 
-        <!-- Painel Investir (ATUALIZADO COM TABELA) -->
+        <!-- Painel Investir (ATUALIZADO COM TABELA PROFISSIONAL) -->
         <div id="investirPanel" class="card hidden">
             <div class="card-title">📈 Planos de Investimento</div>
             <div id="tabelaPlanosContainer"></div>
+            <div style="font-size:12px; color:#64748b; text-align:center; margin-top:-10px; margin-bottom:16px;">
+                ℹ️ Planos de 30 e 60 dias geram lucro por hora, creditado automaticamente a cada hora.
+            </div>
             <div class="card-title" style="margin-top:20px">📊 Meus Investimentos Ativos</div>
             <div id="investimentosAtivosList" class="historico-container"><div style="text-align:center;color:#64748b;padding:20px">Nenhum investimento ativo</div></div>
             <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
@@ -1715,16 +1781,16 @@ function fecharAdminPanel(){ document.getElementById('adminModal').classList.add
 function fecharModalComprovante() { document.getElementById('modalComprovante').classList.add('hidden'); }
 
 // ============================================================
-//  INVESTIMENTOS (NOVA VERSÃO COM TABELA E LUCRO POR HORA)
+//  INVESTIMENTOS (NOVA VERSÃO COM TABELA PROFISSIONAL E COLUNA LUCRO/HORA)
 // ============================================================
 
-// Renderiza a tabela de planos
+// Renderiza a tabela de planos com a nova coluna "Lucro por hora"
 function renderizarPlanosInvestimento() {
     const container = document.getElementById('tabelaPlanosContainer');
     if (!container) return;
     
     let html = `
-        <div style="overflow-x:auto; margin-bottom:10px;">
+        <div class="invest-table-wrapper">
             <table class="invest-table">
                 <thead>
                     <tr>
@@ -1732,6 +1798,7 @@ function renderizarPlanosInvestimento() {
                         <th>Período</th>
                         <th>Retorno Total</th>
                         <th>Lucro</th>
+                        <th>Lucro por hora</th>
                         <th>Ação</th>
                     </tr>
                 </thead>
@@ -1741,12 +1808,26 @@ function renderizarPlanosInvestimento() {
     PLANOS_INVESTIMENTO.forEach((plano, index) => {
         const lucro = plano.retorno - plano.valor;
         const percentual = Math.round((lucro / plano.valor) * 100);
+        // Calcula lucro por hora apenas para planos de 30 ou 60 dias
+        let lucroPorHora = '—';
+        if (plano.dias === 30 || plano.dias === 60) {
+            const totalHoras = plano.dias * 24;
+            lucroPorHora = Math.floor(lucro / totalHoras).toLocaleString('pt-AO') + ' Kz/h';
+        }
+        
+        // Ícone ou badge para planos de 30/60 dias
+        let badge = '';
+        if (plano.dias === 30) badge = '<span class="badge-plano destaque">1 mês</span>';
+        else if (plano.dias === 60) badge = '<span class="badge-plano destaque">2 meses</span>';
+        else badge = '<span class="badge-plano">curto</span>';
+        
         html += `
             <tr>
                 <td class="valor">${plano.valor.toLocaleString('pt-AO')} Kz</td>
-                <td>${plano.descricao}</td>
+                <td class="periodo">${badge} ${plano.descricao}</td>
                 <td class="retorno">${plano.retorno.toLocaleString('pt-AO')} Kz</td>
-                <td class="lucro">+${lucro.toLocaleString('pt-AO')} Kz (${percentual}%)</td>
+                <td class="lucro">+${lucro.toLocaleString('pt-AO')} Kz <span style="font-size:11px;color:#64748b;">(${percentual}%)</span></td>
+                <td class="lucro-hora">${lucroPorHora}</td>
                 <td><button class="btn btn-success btn-sm" onclick="investirPlano(${index})">Investir</button></td>
             </tr>
         `;
