@@ -771,8 +771,17 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
         <!-- Painel Perfil -->
         <div id="perfilPanel" class="card hidden"><div class="card-title">👤 Meu perfil</div><div id="perfilInfo"></div><div class="card-title" style="margin-top:15px">🏦 Dados Bancários</div><div id="dadosBancarios"></div><button class="btn btn-primary" onclick="showConfigIBAN()">Configurar IBAN</button><button class="btn btn-danger" onclick="logout()" style="margin-top:10px">Sair</button><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
         
-        <!-- Painel Suporte -->
-        <div id="suportePanel" class="card hidden"><div class="card-title">🛡️ Atendimento</div><div class="support-card"><div class="support-number">949 097 324</div><div class="support-buttons"><button class="btn btn-whatsapp" onclick="window.open('https://wa.me/244949097324','_blank')">💬 WhatsApp</button><button class="btn btn-call" onclick="window.location.href='tel:+244949097324'">📞 Ligar</button></div></div><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
+        <!-- Painel Suporte (MODIFICADO) -->
+        <div id="suportePanel" class="card hidden">
+            <div class="card-title">🛡️ Atendimento</div>
+            <div class="support-card">
+                <div style="text-align:center; margin-bottom:16px; font-size:16px; font-weight:600; color:#1e3a8a;">📱 Entre no nosso grupo de suporte no WhatsApp</div>
+                <div class="support-buttons">
+                    <button class="btn btn-whatsapp" onclick="window.open('https://chat.whatsapp.com/FrbKvLSBQJXJWPW19oDMEg?s=cl&p=a&ilr=1','_blank')">💬 Entrar no Grupo</button>
+                </div>
+            </div>
+            <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
+        </div>
         
         <!-- Painel Pitch -->
         <div id="pitchPanel" class="card hidden"><div class="card-title">📊 Pitch KWANZAPAY</div><div class="pitch-content"><h3>🎤 KWANZAPAY</h3><div class="ascii-box">✅ Abertura de conta em 1 minuto<br>✅ Transferências instantâneas<br>✅ Investimentos até 85% de retorno<br>✅ Saque IBAN com aprovação rápida</div><p style="margin-top:16px;color:#1e3a8a;text-align:center"><strong>KWANZAPAY – O futuro do dinheiro em Angola</strong></p></div><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
