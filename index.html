@@ -502,6 +502,61 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
     font-weight: 600;
     color: #f59e0b;
 }
+
+/* ===== NOVOS ESTILOS PARA OPÇÕES DE DEPÓSITO ===== */
+.deposit-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.deposit-option {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.deposit-option:hover {
+    border-color: #2563eb;
+    background: #f8fafc;
+    transform: translateY(-2px);
+}
+.deposit-option.selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
+}
+.deposit-option .icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+.deposit-option .info {
+    flex: 1;
+}
+.deposit-option .info .titulo {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 15px;
+}
+.deposit-option .info .detalhe {
+    font-size: 13px;
+    color: #475569;
+    margin-top: 2px;
+    word-break: break-all;
+}
+.deposit-option .copy-badge {
+    background: #2563eb;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
 </style>
 </head>
 <body>
@@ -553,21 +608,43 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <div id="resumoInvestimentosAtivos" class="historico-container" style="max-height: 350px;"><div style="text-align:center;color:#64748b;padding:20px">Carregando...</div></div>
         </div>
 
-        <!-- Painel Depositar -->
+        <!-- Painel Depositar (modificado) -->
         <div id="depositarPanel" class="card hidden">
             <div class="card-title">💰 Depositar Saldo</div>
             <div class="horario-aviso">
                 <span class="icon">🕒</span>
                 <div class="texto"><strong>Horário permitido para depósitos</strong>08:00 às 17:59 (todos os dias)</div>
             </div>
-            <div class="deposit-info-card">
-                <div style="color:#1e3a8a;font-weight:bold;font-size:15px;">💳 Depósito via Multicaixa Express / ATM</div>
-                <div style="font-size:12px;margin:8px 0;">Utilize os dados abaixo:</div>
-                <div style="background:white;border-radius:12px;padding:12px;margin:10px 0;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:600;">🏦 Código Entidade</span><span style="font-family:monospace;font-size:18px;font-weight:800;">10116</span><button class="copy-btn" onclick="copiarTexto('10116')">📋</button></div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:600;">🔢 Referência</span><span style="font-family:monospace;font-size:18px;font-weight:800;">949097324</span><button class="copy-btn" onclick="copiarTexto('949097324')">📋</button></div>
+
+            <!-- NOVAS OPÇÕES DE DEPÓSITO -->
+            <div style="font-weight:600; color:#1e293b; margin-bottom:10px;">Selecione a conta de destino:</div>
+            <div class="deposit-options">
+                <div class="deposit-option" data-tipo="express" data-valor="927297956" onclick="selecionarDeposito(this, 'Express', '927297956')">
+                    <span class="icon">💳</span>
+                    <div class="info">
+                        <div class="titulo">Express</div>
+                        <div class="detalhe">Nº 927297956</div>
+                    </div>
+                    <span class="copy-badge">Copiar</span>
+                </div>
+                <div class="deposit-option" data-tipo="bfa" data-valor="000600002249575430127" onclick="selecionarDeposito(this, 'BFA', '000600002249575430127')">
+                    <span class="icon">🏦</span>
+                    <div class="info">
+                        <div class="titulo">Banco BFA</div>
+                        <div class="detalhe">IBAN: 000600002249575430127<br>Titular: Maria Pemba Bumba Gombe</div>
+                    </div>
+                    <span class="copy-badge">Copiar</span>
+                </div>
+                <div class="deposit-option" data-tipo="bic" data-valor="005100003334115814160" onclick="selecionarDeposito(this, 'BIC', '005100003334115814160')">
+                    <span class="icon">🏦</span>
+                    <div class="info">
+                        <div class="titulo">Banco BIC</div>
+                        <div class="detalhe">IBAN: 005100003334115814160<br>Titular: Maria Pemba Bumba Gombe</div>
+                    </div>
+                    <span class="copy-badge">Copiar</span>
                 </div>
             </div>
+
             <div class="input-group"><label>💰 Valor (Kz)</label><input type="number" id="depositoValor" placeholder="Ex: 10000"></div>
             <div class="input-group"><label>📝 Código da operação</label><input type="text" id="depositoReferencia" placeholder="Código fornecido pelo ATM"></div>
             
@@ -827,7 +904,22 @@ function validarHorario() {
 }
 
 // ============================================================
-//  SOLICITAR DEPÓSITO VIA WHATSAPP
+//  VARIÁVEIS PARA DEPÓSITO (NOVA)
+// ============================================================
+let selectedDepositOption = null; // { tipo: 'Express', valor: '927297956' } ou similar
+
+function selecionarDeposito(element, tipo, valor) {
+    // Remove seleção anterior
+    document.querySelectorAll('.deposit-option').forEach(el => el.classList.remove('selected'));
+    element.classList.add('selected');
+    selectedDepositOption = { tipo, valor };
+    // Copia o número/IBAN para a área de transferência
+    copiarTexto(valor);
+    showSuccessApp(`✅ Dados da conta ${tipo} copiados!`);
+}
+
+// ============================================================
+//  SOLICITAR DEPÓSITO VIA WHATSAPP (MODIFICADO)
 // ============================================================
 async function solicitarDepositoWhatsApp() {
     if (!currentUser) {
@@ -837,6 +929,11 @@ async function solicitarDepositoWhatsApp() {
     const horario = validarHorario();
     if (!horario.valido) {
         showErrorApp(horario.mensagem);
+        return;
+    }
+
+    if (!selectedDepositOption) {
+        showErrorApp('Selecione uma conta de destino clicando em uma das opções acima.');
         return;
     }
 
@@ -860,7 +957,9 @@ async function solicitarDepositoWhatsApp() {
         referencia: referencia,
         data: new Date().toISOString(),
         status: 'pendente',
-        hasComprovante: false
+        hasComprovante: false,
+        contaDestino: selectedDepositOption.tipo,
+        contaNumero: selectedDepositOption.valor
     };
     
     if (!user.depositos) user.depositos = [];
@@ -868,12 +967,15 @@ async function solicitarDepositoWhatsApp() {
     await saveData();
     
     const numeroSuporte = '244949097324';
-    const mensagem = `Olá, sou ${user.nome} (${user.phone}), solicito depósito de ${valor.toLocaleString('pt-AO')} Kz. Código da operação: ${referencia}. Segue em anexo o comprovativo.`;
+    const mensagem = `Olá, sou ${user.nome} (${user.phone}), solicito depósito de ${valor.toLocaleString('pt-AO')} Kz para a conta ${selectedDepositOption.tipo} (${selectedDepositOption.valor}). Código da operação: ${referencia}. Segue em anexo o comprovativo.`;
     const url = `https://wa.me/${numeroSuporte}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
     
     document.getElementById('depositoValor').value = '';
     document.getElementById('depositoReferencia').value = '';
+    // Limpa seleção
+    document.querySelectorAll('.deposit-option').forEach(el => el.classList.remove('selected'));
+    selectedDepositOption = null;
     
     renderizarHistoricoDepositos();
     showSuccessApp('✅ Pedido enviado! Aguarde a confirmação manual.');
@@ -895,9 +997,11 @@ function renderizarHistoricoDepositos() {
                            (dep.status === 'pendente' ? 'status-pendente' : 'status-rejeitado');
         const statusText = dep.status === 'aprovado' ? '✅ Aprovado' : 
                            (dep.status === 'pendente' ? '⏳ Pendente' : '❌ Rejeitado');
+        const contaInfo = dep.contaDestino ? `${dep.contaDestino} (${dep.contaNumero})` : '';
         div.innerHTML = `
             <div><strong>${dep.valor.toLocaleString('pt-AO')} Kz</strong></div>
             <div>📝 ${dep.referencia}</div>
+            ${contaInfo ? `<div>🏦 ${contaInfo}</div>` : ''}
             <div>📅 ${new Date(dep.data).toLocaleString()}</div>
             <div><span class="${statusClass}">${statusText}</span></div>
         `;
@@ -935,11 +1039,13 @@ function renderizarAdminDepositos() {
     
     let html = '';
     deposPendentes.forEach(dep => {
+        const contaInfo = dep.contaDestino ? `${dep.contaDestino} (${dep.contaNumero})` : '';
         html += `
             <div class="admin-card">
                 <div><strong>👤 ${dep.usuarioNome}</strong> (${dep.usuarioPhone})</div>
                 <div>💰 ${dep.valor.toLocaleString('pt-AO')} Kz</div>
                 <div>📝 Ref: ${dep.referencia}</div>
+                ${contaInfo ? `<div>🏦 ${contaInfo}</div>` : ''}
                 <div>📅 ${new Date(dep.data).toLocaleString()}</div>
                 <div style="font-size:12px; color:#64748b; margin-top:4px;">📎 Comprovativo enviado via WhatsApp</div>
                 <div class="buttons-row" style="margin-top:12px;">
