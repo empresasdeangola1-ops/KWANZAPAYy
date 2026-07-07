@@ -711,8 +711,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <div class="input-group"><label>💰 Valor (Kz)</label><input type="number" id="depositoValor" placeholder="Ex: 10000"></div>
             <div class="input-group"><label>📝 Código da operação</label><input type="text" id="depositoReferencia" placeholder="Código fornecido pelo ATM"></div>
             
+            <!-- DOIS BOTÕES DE WHATSAPP: principal e alternativo -->
             <div class="whatsapp-row">
-                <button class="btn btn-whatsapp" onclick="solicitarDepositoWhatsApp()">📱 Solicitar Depósito via WhatsApp</button>
+                <button class="btn btn-whatsapp" onclick="solicitarDepositoWhatsApp('244949097324')">📱 Suporte Principal</button>
+                <button class="btn btn-whatsapp" onclick="solicitarDepositoWhatsApp('244976303501')">📱 Suporte Alternativo</button>
             </div>
             <p style="font-size:12px;color:#64748b;text-align:center;margin-top:-5px;margin-bottom:12px;">Ao clicar, será aberto o WhatsApp com os dados preenchidos. Anexe o comprovativo e aguarde a confirmação manual.</p>
             
@@ -994,9 +996,12 @@ function selecionarDeposito(element, tipo, valor) {
 }
 
 // ============================================================
-//  SOLICITAR DEPÓSITO VIA WHATSAPP (MODIFICADO)
+//  SOLICITAR DEPÓSITO VIA WHATSAPP (MODIFICADO - AGORA COM PARÂMETRO)
 // ============================================================
-async function solicitarDepositoWhatsApp() {
+async function solicitarDepositoWhatsApp(numeroSuporte) {
+    // Número padrão caso não seja passado (para compatibilidade)
+    numeroSuporte = numeroSuporte || '244949097324';
+
     if (!currentUser) {
         showErrorApp('Faça login primeiro');
         return;
@@ -1041,7 +1046,6 @@ async function solicitarDepositoWhatsApp() {
     user.depositos.push(novoDeposito);
     await saveData();
     
-    const numeroSuporte = '244949097324';
     const mensagem = `Olá, sou ${user.nome} (${user.phone}), solicito depósito de ${valor.toLocaleString('pt-AO')} Kz para a conta ${selectedDepositOption.tipo} (${selectedDepositOption.valor}). Código da operação: ${referencia}. Segue em anexo o comprovativo.`;
     const url = `https://wa.me/${numeroSuporte}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
