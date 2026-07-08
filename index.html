@@ -857,15 +857,15 @@ let timerInterval = null;
 //  PLANOS DE INVESTIMENTO
 // ============================================================
 const PLANOS_INVESTIMENTO = [
-    { valor: 1000,  dias: 3,  retorno: 3600,  descricao: "3 dias" },
-    { valor: 5000,  dias: 7,  retorno: 10080, descricao: "7 dias" },
-    { valor: 10000, dias: 30, retorno: 18500, descricao: "1 mês" },
-    { valor: 20000, dias: 30, retorno: 35000, descricao: "1 mês" },
-    { valor: 20000, dias: 60, retorno: 63000, descricao: "2 meses" },
-    { valor: 30000, dias: 30, retorno: 51000, descricao: "1 mês" },
-    { valor: 30000, dias: 60, retorno: 92000, descricao: "2 meses" },
-    { valor: 40000, dias: 30, retorno: 71000, descricao: "1 mês" },
-    { valor: 40000, dias: 60, retorno: 125000, descricao: "2 meses" }
+    { valor: 1000,  dias: 3,  retorno: 3600,  descricao: "3 dias", unico: true },
+    { valor: 5000,  dias: 7,  retorno: 10080, descricao: "7 dias", unico: true },
+    { valor: 10000, dias: 30, retorno: 18500, descricao: "1 mês", unico: false },
+    { valor: 20000, dias: 30, retorno: 35000, descricao: "1 mês", unico: false },
+    { valor: 20000, dias: 60, retorno: 63000, descricao: "2 meses", unico: false },
+    { valor: 30000, dias: 30, retorno: 51000, descricao: "1 mês", unico: false },
+    { valor: 30000, dias: 60, retorno: 92000, descricao: "2 meses", unico: false },
+    { valor: 40000, dias: 30, retorno: 71000, descricao: "1 mês", unico: false },
+    { valor: 40000, dias: 60, retorno: 125000, descricao: "2 meses", unico: false }
 ];
 
 // ============================================================
@@ -1789,6 +1789,9 @@ function renderizarPlanosInvestimento() {
     const container = document.getElementById('tabelaPlanosContainer');
     if (!container) return;
     
+    const user = usersDB[currentUser];
+    const planosUsados = user ? (user.planosUnicosUsados || []) : [];
+    
     let html = `
         <div class="invest-table-wrapper">
             <table class="invest-table">
@@ -1814,19 +1817,33 @@ function renderizarPlanosInvestimento() {
             lucroPorHora = Math.floor(lucro / totalHoras).toLocaleString('pt-AO') + ' Kz/h';
         }
         
+        // Verifica se o plano já foi usado
+        const planoJaUsado = plano.unico && planosUsados.includes(index);
+        
         let badge = '';
         if (plano.dias === 30) badge = '<span class="badge-plano destaque">1 mês</span>';
         else if (plano.dias === 60) badge = '<span class="badge-plano destaque">2 meses</span>';
         else badge = '<span class="badge-plano">curto</span>';
         
+        // Adiciona indicação de "USO ÚNICO" para planos de 3 e 7 dias
+        let usoUnicoLabel = '';
+        if (plano.unico) {
+            usoUnicoLabel = ' <span style="font-size:10px; background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:10px; display:inline-block;">🎯 Único</span>';
+        }
+        
+        // Se o plano já foi usado, desabilita o botão
+        const botaoHtml = planoJaUsado 
+            ? `<span style="color:#dc2626; font-weight:bold; font-size:12px;">✅ Usado</span>`
+            : `<button class="btn btn-success btn-sm" onclick="investirPlano(${index})">Investir</button>`;
+        
         html += `
             <tr>
                 <td class="valor">${plano.valor.toLocaleString('pt-AO')} Kz</td>
-                <td class="periodo">${badge} ${plano.descricao}</td>
+                <td class="periodo">${badge} ${plano.descricao} ${usoUnicoLabel}</td>
                 <td class="retorno">${plano.retorno.toLocaleString('pt-AO')} Kz</td>
                 <td class="lucro">+${lucro.toLocaleString('pt-AO')} Kz <span style="font-size:11px;color:#64748b;">(${percentual}%)</span></td>
                 <td class="lucro-hora">${lucroPorHora}</td>
-                <td><button class="btn btn-success btn-sm" onclick="investirPlano(${index})">Investir</button></td>
+                <td>${botaoHtml}</td>
             </tr>
         `;
     });
@@ -1847,12 +1864,21 @@ async function investirPlano(index) {
     const user = usersDB[currentUser];
     if (!user) return;
     
+    // Verifica se o plano é de uso único e já foi usado
+    if (plano.unico) {
+        if (!user.planosUnicosUsados) user.planosUnicosUsados = [];
+        if (user.planosUnicosUsados.includes(index)) {
+            showErrorApp(`❌ Você já usou o plano de ${plano.descricao}. Este plano é de uso único!`);
+            return;
+        }
+    }
+    
     if (user.saldo < plano.valor) {
         showErrorApp(`Saldo insuficiente. Você precisa de ${plano.valor.toLocaleString('pt-AO')} Kz para este plano.`);
         return;
     }
     
-    if (!confirm(`📈 Confirmar investimento de ${plano.valor.toLocaleString('pt-AO')} Kz no plano de ${plano.descricao}?\n\nRetorno total: ${plano.retorno.toLocaleString('pt-AO')} Kz\nLucro: ${(plano.retorno - plano.valor).toLocaleString('pt-AO')} Kz`)) {
+    if (!confirm(`📈 Confirmar investimento de ${plano.valor.toLocaleString('pt-AO')} Kz no plano de ${plano.descricao}?\n\nRetorno total: ${plano.retorno.toLocaleString('pt-AO')} Kz\nLucro: ${(plano.retorno - plano.valor).toLocaleString('pt-AO')} Kz${plano.unico ? '\n\n⚠️ Este plano é de USO ÚNICO!' : ''}`)) {
         return;
     }
     
@@ -1881,20 +1907,31 @@ async function investirPlano(index) {
         status: 'ativo',
         lucroPorHora: lucroPorHora,
         creditoAcumulado: 0,
-        ultimoCredito: new Date().toISOString()
+        ultimoCredito: new Date().toISOString(),
+        planoIndex: index,
+        isUnico: plano.unico || false
     });
+    
+    // Marca o plano como usado se for de uso único
+    if (plano.unico) {
+        if (!user.planosUnicosUsados) user.planosUnicosUsados = [];
+        if (!user.planosUnicosUsados.includes(index)) {
+            user.planosUnicosUsados.push(index);
+        }
+    }
     
     if (!user.historico) user.historico = [];
     user.historico.push({
         tipo: "enviado",
         valor: plano.valor,
-        descricao: `Investimento: ${plano.valor.toLocaleString('pt-AO')} Kz - ${plano.descricao}`,
+        descricao: `Investimento: ${plano.valor.toLocaleString('pt-AO')} Kz - ${plano.descricao}${plano.unico ? ' (USO ÚNICO)' : ''}`,
         data: new Date().toISOString()
     });
     
     await saveData();
     atualizarSaldo();
     renderizarInvestimentos();
+    renderizarPlanosInvestimento();
     showSuccessApp(`✅ Investimento de ${plano.valor.toLocaleString('pt-AO')} Kz realizado com sucesso!`);
 }
 
@@ -1928,10 +1965,16 @@ function renderizarInvestimentos() {
                             </div>`;
             }
             
+            // Adiciona indicação de uso único
+            let unicoLabel = '';
+            if (inv.isUnico) {
+                unicoLabel = '<span style="font-size:10px; background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:10px; margin-left:8px;">🎯 Único</span>';
+            }
+            
             const card = document.createElement('div');
             card.className = 'invest-card-resumo';
             card.innerHTML = `
-                <div><strong>📊 ${inv.plano}</strong></div>
+                <div><strong>📊 ${inv.plano}</strong> ${unicoLabel}</div>
                 <div>💰 Valor: ${inv.valor.toLocaleString('pt-AO')} Kz</div>
                 <div>📈 Rendimento: ${inv.rendimento}% → ${inv.totalResgate.toLocaleString('pt-AO')} Kz</div>
                 ${infoExtra}
@@ -1958,10 +2001,16 @@ function renderizarInvestimentos() {
                                 ⏱️ Lucro por hora: ${inv.lucroPorHora} Kz | Já creditado: ${creditado.toLocaleString('pt-AO')} Kz | Restante: ${restante.toLocaleString('pt-AO')} Kz
                             </div>`;
             }
+            
+            let unicoLabel = '';
+            if (inv.isUnico) {
+                unicoLabel = '<span style="font-size:10px; background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:10px; margin-left:8px;">🎯 Único</span>';
+            }
+            
             const div = document.createElement('div');
             div.className = 'invest-item';
             div.innerHTML = `
-                <div><strong>${inv.plano}</strong></div>
+                <div><strong>${inv.plano}</strong> ${unicoLabel}</div>
                 <div>💰 ${inv.valor.toLocaleString('pt-AO')} Kz → +${inv.rendimento}% = ${inv.totalResgate.toLocaleString('pt-AO')} Kz</div>
                 ${infoExtra}
                 ${timerHtml}
@@ -2075,7 +2124,8 @@ async function fazerCadastro() {
     usersDB[phone] = {
         id: phone, nome, phone, password, saldo: 100,
         historico: [{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}],
-        investimentos: [], saques: [], depositos: [], iban: null
+        investimentos: [], saques: [], depositos: [], iban: null,
+        planosUnicosUsados: []
     };
     await saveData();
     showError('✅ Conta criada! Faça login.');
@@ -2266,8 +2316,8 @@ function showPitch(){ hideAllPanels(); document.getElementById('pitchPanel').cla
     verificarInvestimentosExpirados();
     if(Object.keys(usersDB).length === 0) {
         usersDB = {
-            "923456789": {id:"923456789", nome:"João Silva", phone:"923456789", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:null},
-            "912345678": {id:"912345678", nome:"Maria Silva", phone:"912345678", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:{banco:"BAI", numero:"AO060000000000000000000", titular:"Maria Silva"}}
+            "923456789": {id:"923456789", nome:"João Silva", phone:"923456789", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:null, planosUnicosUsados:[]},
+            "912345678": {id:"912345678", nome:"Maria Silva", phone:"912345678", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:{banco:"BAI", numero:"AO060000000000000000000", titular:"Maria Silva"}, planosUnicosUsados:[]}
         };
         await saveData();
     }
