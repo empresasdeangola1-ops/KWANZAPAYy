@@ -682,6 +682,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <!-- NOVAS OPÇÕES DE DEPÓSITO -->
             <div style="font-weight:600; color:#1e293b; margin-bottom:10px;">Selecione a conta de destino:</div>
             <div class="deposit-options">
+                <!-- Mantida a opção Express -->
                 <div class="deposit-option" data-tipo="express" data-valor="927297956" onclick="selecionarDeposito(this, 'Express', '927297956')">
                     <span class="icon">💳</span>
                     <div class="info">
@@ -690,20 +691,12 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
                     </div>
                     <span class="copy-badge">Copiar</span>
                 </div>
-                <div class="deposit-option" data-tipo="bfa" data-valor="000600002249575430127" onclick="selecionarDeposito(this, 'BFA', '000600002249575430127')">
-                    <span class="icon">🏦</span>
+                <!-- Nova opção: Pagamento por Referência -->
+                <div class="deposit-option" data-tipo="referencia" data-valor="Entidade 10116, Referência 949097324" onclick="selecionarDeposito(this, 'Pagamento por Referência', 'Entidade 10116, Referência 949097324')">
+                    <span class="icon">📄</span>
                     <div class="info">
-                        <div class="titulo">Banco BFA</div>
-                        <div class="detalhe">IBAN: 000600002249575430127<br>Titular: Maria Pemba Bumba Gombe</div>
-                    </div>
-                    <span class="copy-badge">Copiar</span>
-                </div>
-                <!-- Substituído BIC por Atlântico -->
-                <div class="deposit-option" data-tipo="atlantico" data-valor="005500004934067810180" onclick="selecionarDeposito(this, 'Atlântico', '005500004934067810180')">
-                    <span class="icon">🏦</span>
-                    <div class="info">
-                        <div class="titulo">Banco Atlântico</div>
-                        <div class="detalhe">IBAN: 005500004934067810180<br>Titular: Maria Pemba Bumba Gombe</div>
+                        <div class="titulo">Pagamento por Referência</div>
+                        <div class="detalhe">Código Entidade: 10116<br>Referência: 949097324</div>
                     </div>
                     <span class="copy-badge">Copiar</span>
                 </div>
