@@ -671,7 +671,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <div id="resumoInvestimentosAtivos" class="historico-container" style="max-height: 350px;"><div style="text-align:center;color:#64748b;padding:20px">Carregando...</div></div>
         </div>
 
-        <!-- Painel Depositar (modificado) -->
+        <!-- Painel Depositar -->
         <div id="depositarPanel" class="card hidden">
             <div class="card-title">💰 Depositar Saldo</div>
             <div class="horario-aviso">
@@ -682,7 +682,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <!-- NOVAS OPÇÕES DE DEPÓSITO -->
             <div style="font-weight:600; color:#1e293b; margin-bottom:10px;">Selecione a conta de destino:</div>
             <div class="deposit-options">
-                <!-- Mantida a opção Express -->
                 <div class="deposit-option" data-tipo="express" data-valor="927297956" onclick="selecionarDeposito(this, 'Express', '927297956')">
                     <span class="icon">💳</span>
                     <div class="info">
@@ -691,7 +690,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
                     </div>
                     <span class="copy-badge">Copiar</span>
                 </div>
-                <!-- Nova opção: Pagamento por Referência -->
                 <div class="deposit-option" data-tipo="referencia" data-valor="Entidade 10116, Referência 949097324" onclick="selecionarDeposito(this, 'Pagamento por Referência', 'Entidade 10116, Referência 949097324')">
                     <span class="icon">📄</span>
                     <div class="info">
@@ -749,7 +747,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <div class="back-link" onclick="hideAllPanels()">← Voltar</div>
         </div>
 
-        <!-- Painel Investir (ATUALIZADO COM TABELA PROFISSIONAL) -->
+        <!-- Painel Investir -->
         <div id="investirPanel" class="card hidden">
             <div class="card-title">📈 Planos de Investimento</div>
             <div id="tabelaPlanosContainer"></div>
@@ -767,7 +765,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
         <!-- Painel Perfil -->
         <div id="perfilPanel" class="card hidden"><div class="card-title">👤 Meu perfil</div><div id="perfilInfo"></div><div class="card-title" style="margin-top:15px">🏦 Dados Bancários</div><div id="dadosBancarios"></div><button class="btn btn-primary" onclick="showConfigIBAN()">Configurar IBAN</button><button class="btn btn-danger" onclick="logout()" style="margin-top:10px">Sair</button><div class="back-link" onclick="hideAllPanels()">← Voltar</div></div>
         
-        <!-- Painel Suporte (MODIFICADO) -->
+        <!-- Painel Suporte -->
         <div id="suportePanel" class="card hidden">
             <div class="card-title">🛡️ Atendimento</div>
             <div class="support-card">
@@ -814,7 +812,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
             <button class="btn btn-outline btn-sm" onclick="fecharAdminPanel()" style="margin-top:15px;width:auto;display:block;margin-left:auto;margin-right:auto">Fechar</button>
         </div>
         
-        <!-- Modal Visualizar Comprovante (mantido apenas para compatibilidade, sem uso) -->
+        <!-- Modal Visualizar Comprovante -->
         <div id="modalComprovante" class="card hidden" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1002;max-width:90%;width:400px;max-height:80vh;overflow-y:auto"><div class="card-title">📎 Comprovativo</div><div id="comprovanteConteudo" style="text-align:center;padding:10px"></div><button class="btn btn-outline btn-sm" onclick="fecharModalComprovante()" style="margin-top:15px;width:auto;display:block;margin-left:auto;margin-right:auto">Fechar</button></div>
     </div>
 </div>
@@ -831,7 +829,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb
 
 <script>
 // ============================================================
-//  CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE (NOVO PROJETO)
+//  CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE
 // ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyBi3bkN4074Y7o846_xObHiIUmvv1s-B7w",
@@ -856,7 +854,7 @@ let pendingTransfer = null;
 let timerInterval = null;
 
 // ============================================================
-//  PLANOS DE INVESTIMENTO (NOVA TABELA)
+//  PLANOS DE INVESTIMENTO
 // ============================================================
 const PLANOS_INVESTIMENTO = [
     { valor: 1000,  dias: 3,  retorno: 3600,  descricao: "3 dias" },
@@ -975,25 +973,22 @@ function validarHorario() {
 }
 
 // ============================================================
-//  VARIÁVEIS PARA DEPÓSITO (NOVA)
+//  VARIÁVEIS PARA DEPÓSITO
 // ============================================================
-let selectedDepositOption = null; // { tipo: 'Express', valor: '927297956' } ou similar
+let selectedDepositOption = null;
 
 function selecionarDeposito(element, tipo, valor) {
-    // Remove seleção anterior
     document.querySelectorAll('.deposit-option').forEach(el => el.classList.remove('selected'));
     element.classList.add('selected');
     selectedDepositOption = { tipo, valor };
-    // Copia o número/IBAN para a área de transferência
     copiarTexto(valor);
     showSuccessApp(`✅ Dados da conta ${tipo} copiados!`);
 }
 
 // ============================================================
-//  SOLICITAR DEPÓSITO VIA WHATSAPP (MODIFICADO - AGORA COM PARÂMETRO)
+//  SOLICITAR DEPÓSITO VIA WHATSAPP (com aprovação manual)
 // ============================================================
 async function solicitarDepositoWhatsApp(numeroSuporte) {
-    // Número padrão caso não seja passado (para compatibilidade)
     numeroSuporte = numeroSuporte || '244949097324';
 
     if (!currentUser) {
@@ -1030,7 +1025,7 @@ async function solicitarDepositoWhatsApp(numeroSuporte) {
         valor: valor,
         referencia: referencia,
         data: new Date().toISOString(),
-        status: 'pendente',
+        status: 'pendente', // pendente, aprovado, rejeitado
         hasComprovante: false,
         contaDestino: selectedDepositOption.tipo,
         contaNumero: selectedDepositOption.valor
@@ -1040,18 +1035,18 @@ async function solicitarDepositoWhatsApp(numeroSuporte) {
     user.depositos.push(novoDeposito);
     await saveData();
     
-    const mensagem = `Olá, sou ${user.nome} (${user.phone}), solicito depósito de ${valor.toLocaleString('pt-AO')} Kz para a conta ${selectedDepositOption.tipo} (${selectedDepositOption.valor}). Código da operação: ${referencia}. Segue em anexo o comprovativo.`;
+    // Gera o comprovativo com os dados
+    const mensagem = `📌 *KWANZAPAY - Pedido de Depósito*\n\n👤 Usuário: ${user.nome} (${user.phone})\n💰 Valor: ${valor.toLocaleString('pt-AO')} Kz\n🏦 Conta: ${selectedDepositOption.tipo} (${selectedDepositOption.valor})\n📝 Código: ${referencia}\n📅 Data: ${new Date().toLocaleString()}\n\n✅ *Aguardando aprovação do administrador.*`;
     const url = `https://wa.me/${numeroSuporte}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
     
     document.getElementById('depositoValor').value = '';
     document.getElementById('depositoReferencia').value = '';
-    // Limpa seleção
     document.querySelectorAll('.deposit-option').forEach(el => el.classList.remove('selected'));
     selectedDepositOption = null;
     
     renderizarHistoricoDepositos();
-    showSuccessApp('✅ Pedido enviado! Aguarde a confirmação manual.');
+    showSuccessApp('✅ Pedido enviado! Aguarde a aprovação do administrador.');
 }
 
 function renderizarHistoricoDepositos() {
@@ -1083,7 +1078,7 @@ function renderizarHistoricoDepositos() {
 }
 
 // ============================================================
-//  ADMIN - DEPÓSITOS
+//  ADMIN - DEPÓSITOS (Aprovação manual)
 // ============================================================
 function renderizarAdminDepositos() {
     const container = document.getElementById('adminDepositosSection');
@@ -1175,7 +1170,7 @@ async function rejeitarDepositoAdmin(phone, id) {
 }
 
 // ============================================================
-//  ADMIN - SAQUES
+//  ADMIN - SAQUES (Aprovação manual)
 // ============================================================
 function renderizarAdminSaques() {
     let saquesPend = [];
@@ -1788,10 +1783,8 @@ function fecharAdminPanel(){ document.getElementById('adminModal').classList.add
 function fecharModalComprovante() { document.getElementById('modalComprovante').classList.add('hidden'); }
 
 // ============================================================
-//  INVESTIMENTOS (NOVA VERSÃO COM TABELA PROFISSIONAL E COLUNA LUCRO/HORA)
+//  INVESTIMENTOS
 // ============================================================
-
-// Renderiza a tabela de planos com a nova coluna "Lucro por hora"
 function renderizarPlanosInvestimento() {
     const container = document.getElementById('tabelaPlanosContainer');
     if (!container) return;
@@ -1815,14 +1808,12 @@ function renderizarPlanosInvestimento() {
     PLANOS_INVESTIMENTO.forEach((plano, index) => {
         const lucro = plano.retorno - plano.valor;
         const percentual = Math.round((lucro / plano.valor) * 100);
-        // Calcula lucro por hora apenas para planos de 30 ou 60 dias
         let lucroPorHora = '—';
         if (plano.dias === 30 || plano.dias === 60) {
             const totalHoras = plano.dias * 24;
             lucroPorHora = Math.floor(lucro / totalHoras).toLocaleString('pt-AO') + ' Kz/h';
         }
         
-        // Ícone ou badge para planos de 30/60 dias
         let badge = '';
         if (plano.dias === 30) badge = '<span class="badge-plano destaque">1 mês</span>';
         else if (plano.dias === 60) badge = '<span class="badge-plano destaque">2 meses</span>';
@@ -1844,7 +1835,6 @@ function renderizarPlanosInvestimento() {
     container.innerHTML = html;
 }
 
-// Função chamada ao clicar em "Investir" na tabela
 async function investirPlano(index) {
     if (!currentUser) {
         showErrorApp('Faça login primeiro');
@@ -1857,28 +1847,24 @@ async function investirPlano(index) {
     const user = usersDB[currentUser];
     if (!user) return;
     
-    // Verifica saldo
     if (user.saldo < plano.valor) {
         showErrorApp(`Saldo insuficiente. Você precisa de ${plano.valor.toLocaleString('pt-AO')} Kz para este plano.`);
         return;
     }
     
-    // Confirmar investimento
     if (!confirm(`📈 Confirmar investimento de ${plano.valor.toLocaleString('pt-AO')} Kz no plano de ${plano.descricao}?\n\nRetorno total: ${plano.retorno.toLocaleString('pt-AO')} Kz\nLucro: ${(plano.retorno - plano.valor).toLocaleString('pt-AO')} Kz`)) {
         return;
     }
     
-    // Realizar investimento
     const dataResgate = new Date();
     dataResgate.setDate(dataResgate.getDate() + plano.dias);
     
-    // Calcula lucro por hora (apenas para planos de 30 ou 60 dias)
     let lucroPorHora = 0;
     let isHourly = (plano.dias === 30 || plano.dias === 60);
     if (isHourly) {
         const totalHoras = plano.dias * 24;
         const lucroTotal = plano.retorno - plano.valor;
-        lucroPorHora = Math.floor(lucroTotal / totalHoras); // valor inteiro por hora
+        lucroPorHora = Math.floor(lucroTotal / totalHoras);
     }
     
     user.saldo -= plano.valor;
@@ -1893,9 +1879,9 @@ async function investirPlano(index) {
         dataInicio: new Date().toISOString(),
         dataResgate: dataResgate.toISOString(),
         status: 'ativo',
-        lucroPorHora: lucroPorHora,      // 0 se não for hourly
-        creditoAcumulado: 0,              // quanto já foi creditado do lucro
-        ultimoCredito: new Date().toISOString() // timestamp do último crédito
+        lucroPorHora: lucroPorHora,
+        creditoAcumulado: 0,
+        ultimoCredito: new Date().toISOString()
     });
     
     if (!user.historico) user.historico = [];
@@ -1912,14 +1898,12 @@ async function investirPlano(index) {
     showSuccessApp(`✅ Investimento de ${plano.valor.toLocaleString('pt-AO')} Kz realizado com sucesso!`);
 }
 
-// Renderiza os investimentos ativos do usuário (usado em vários lugares)
 function renderizarInvestimentos() {
     const user = usersDB[currentUser];
     if (!user) return;
     
     const ativos = (user.investimentos || []).filter(i => i.status === 'ativo');
     
-    // Resumo na tela principal
     const resumoDiv = document.getElementById('resumoInvestimentosAtivos');
     if (ativos.length === 0) {
         resumoDiv.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">💼 Nenhum investimento ativo</div>';
@@ -1934,7 +1918,6 @@ function renderizarInvestimentos() {
             const progresso = Math.min(100, ((inv.prazoDias - diasRestantes) / inv.prazoDias) * 100);
             const timerHtml = criarTimerElemento(inv);
             
-            // Mostra informações de lucro por hora se aplicável
             let infoExtra = '';
             if (inv.lucroPorHora > 0) {
                 const lucroTotal = inv.totalResgate - inv.valor;
@@ -1959,7 +1942,6 @@ function renderizarInvestimentos() {
         });
     }
     
-    // Lista detalhada no painel Investir
     const ativosDiv = document.getElementById('investimentosAtivosList');
     if (ativos.length === 0) {
         ativosDiv.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">Nenhum investimento ativo</div>';
@@ -2006,19 +1988,16 @@ async function verificarInvestimentosExpirados() {
                 const dataUltimoCredito = inv.ultimoCredito ? new Date(inv.ultimoCredito) : new Date(inv.dataInicio);
                 const horasPassadas = Math.floor((agora - dataUltimoCredito) / (1000 * 60 * 60));
                 
-                // Se for plano com lucro por hora (30 ou 60 dias)
                 if (inv.lucroPorHora > 0 && horasPassadas >= 1) {
                     const lucroTotal = inv.totalResgate - inv.valor;
                     const creditado = inv.creditoAcumulado || 0;
                     let lucroRestante = lucroTotal - creditado;
                     
-                    // Quantas horas podemos creditar agora (sem ultrapassar o lucro total)
                     let horasCreditar = Math.min(horasPassadas, Math.floor(lucroRestante / inv.lucroPorHora));
                     if (horasCreditar > 0) {
                         const credito = horasCreditar * inv.lucroPorHora;
                         inv.creditoAcumulado = (inv.creditoAcumulado || 0) + credito;
                         user.saldo += credito;
-                        // Registra no histórico (opcional, mas pode gerar muitos registros)
                         if (!user.historico) user.historico = [];
                         user.historico.push({
                             tipo: "recebido",
@@ -2031,9 +2010,7 @@ async function verificarInvestimentosExpirados() {
                     }
                 }
                 
-                // Verifica se o investimento expirou
                 if (dataResgate <= agora) {
-                    // Se ainda não foi resgatado e tem lucro por hora, credita o restante do lucro
                     if (inv.lucroPorHora > 0) {
                         const lucroTotal = inv.totalResgate - inv.valor;
                         const creditado = inv.creditoAcumulado || 0;
@@ -2052,17 +2029,10 @@ async function verificarInvestimentosExpirados() {
                         }
                     }
                     
-                    // Marca como resgatado
                     inv.status = 'resgatado';
-                    // Se não for hourly, já creditamos o total no resgate (mantido para compatibilidade)
                     if (inv.lucroPorHora === 0) {
-                        // Para planos sem hourly, credita o totalResgate (já foi descontado o valor inicial)
-                        // Mas cuidado: o saldo já foi debitado no momento do investimento, então creditamos o totalResgate
-                        // Se o investimento não for hourly, o lucro é creditado de uma vez
-                        // Verifica se já não foi creditado (evitar duplicidade)
-                        // Usamos o campo "creditoAcumulado" para saber se já foi creditado
                         if (!inv.creditoAcumulado || inv.creditoAcumulado === 0) {
-                            user.saldo += inv.totalResgate; // totalResgate inclui o valor investido + lucro
+                            user.saldo += inv.totalResgate;
                             inv.creditoAcumulado = inv.totalResgate;
                             if (!user.historico) user.historico = [];
                             user.historico.push({
@@ -2139,7 +2109,7 @@ async function fazerLogin() {
 }
 
 // ============================================================
-//  TRANSFERÊNCIAS
+//  TRANSFERÊNCIAS (instantâneas, sem aprovação)
 // ============================================================
 function mostrarConfirmacao() {
     const destinoRaw = document.getElementById('destinoPhone').value;
@@ -2179,7 +2149,7 @@ async function confirmarEnvio() {
 }
 
 // ============================================================
-//  SAQUES
+//  SAQUES (com aprovação manual)
 // ============================================================
 async function solicitarSaque() {
     const horario = validarHorario();
@@ -2201,7 +2171,7 @@ async function solicitarSaque() {
     renderizarGlobalSaques();
     document.getElementById('saqueValor').value = '';
     document.getElementById('saqueDesc').value = '';
-    showSuccessApp('✅ Pedido de saque enviado! Aguarde aprovação.');
+    showSuccessApp('✅ Pedido de saque enviado! Aguarde aprovação do administrador.');
 }
 
 function renderizarHistoricoSaques() {
@@ -2293,7 +2263,7 @@ function showPitch(){ hideAllPanels(); document.getElementById('pitchPanel').cla
 // ============================================================
 (async function init() {
     await loadData();
-    verificarInvestimentosExpirados(); // inicia o loop de verificação
+    verificarInvestimentosExpirados();
     if(Object.keys(usersDB).length === 0) {
         usersDB = {
             "923456789": {id:"923456789", nome:"João Silva", phone:"923456789", password:"1234", saldo:100, historico:[{tipo:"recebido", valor:100, descricao:"Bônus de boas-vindas", data:new Date().toISOString()}], investimentos:[], saques:[], depositos:[], iban:null},
