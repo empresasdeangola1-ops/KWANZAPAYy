@@ -986,14 +986,45 @@
                     <div class="texto"><strong>Horário permitido para depósitos</strong>08:00 às 17:59 (todos os dias)</div>
                 </div>
 
-                <!-- NOVAS OPÇÕES DE DEPÓSITO -->
+                <!-- NOVAS OPÇÕES DE DEPÓSITO (3 contas adicionadas) -->
                 <div style="font-weight:600; color:#1e293b; margin-bottom:10px;">Selecione a conta de destino:</div>
                 <div class="deposit-options">
+                    <!-- Opção 1: Referência (já existente) -->
                     <div class="deposit-option" data-tipo="referencia" data-valor="Entidade 10116, Referência 949097324" onclick="selecionarDeposito(this, 'Pagamento por Referência', 'Entidade 10116, Referência 949097324')">
                         <span class="icon">📄</span>
                         <div class="info">
                             <div class="titulo">Pagamento por Referência</div>
                             <div class="detalhe">Código Entidade: 10116<br>Referência: 949097324</div>
+                        </div>
+                        <span class="copy-badge">Copiar</span>
+                    </div>
+
+                    <!-- Opção 2: Atlântico (nova) -->
+                    <div class="deposit-option" data-tipo="atlantico" data-valor="Atlântico _005500004934067810180 - Maria Pemba Bumba Gombe" onclick="selecionarDeposito(this, 'Atlântico', '005500004934067810180 (Maria Pemba Bumba Gombe)')">
+                        <span class="icon">🏦</span>
+                        <div class="info">
+                            <div class="titulo">Atlântico</div>
+                            <div class="detalhe">Conta: 005500004934067810180<br>Titular: Maria Pemba Bumba Gombe</div>
+                        </div>
+                        <span class="copy-badge">Copiar</span>
+                    </div>
+
+                    <!-- Opção 3: BFA (nova) -->
+                    <div class="deposit-option" data-tipo="bfa" data-valor="BFA _000600002249575430127 - Maria Pemba Bumba Gombe" onclick="selecionarDeposito(this, 'BFA', '000600002249575430127 (Maria Pemba Bumba Gombe)')">
+                        <span class="icon">🏦</span>
+                        <div class="info">
+                            <div class="titulo">BFA</div>
+                            <div class="detalhe">Conta: 000600002249575430127<br>Titular: Maria Pemba Bumba Gombe</div>
+                        </div>
+                        <span class="copy-badge">Copiar</span>
+                    </div>
+
+                    <!-- Opção 4: Depósito Express (para outros bancos) -->
+                    <div class="deposit-option" data-tipo="express" data-valor="Depósito Express - Número 949097324" onclick="selecionarDeposito(this, 'Depósito Express', 'Número 949097324')">
+                        <span class="icon">⚡</span>
+                        <div class="info">
+                            <div class="titulo">Depósito Express</div>
+                            <div class="detalhe">Número: 949097324<br>(Para bancos diferentes dos listados)</div>
                         </div>
                         <span class="copy-badge">Copiar</span>
                     </div>
@@ -2643,7 +2674,6 @@
             if (isNaN(valor) || valor < 1000) return showErrorApp('Valor mínimo: 1.000 Kz');
             if (valor > user.saldo) return showErrorApp('Saldo insuficiente');
 
-            // Criar pedido de saque com status pendente
             if (!user.saques) user.saques = [];
             user.saques.push({ 
                 id: Date.now(), 
