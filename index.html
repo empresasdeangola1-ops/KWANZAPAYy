@@ -831,6 +831,47 @@
         font-size: 11px;
         font-weight: 600;
     }
+
+    /* ===== ESTILO PARA DESTAQUE DO BOTÃO SOLICITAR DEPÓSITO ===== */
+    .btn-solicitar-deposito {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        font-weight: 700;
+        font-size: 17px;
+        padding: 16px;
+        border-radius: 14px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 100%;
+        margin-top: 8px;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    }
+    .btn-solicitar-deposito:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+    }
+    .btn-solicitar-deposito .icon {
+        margin-right: 8px;
+    }
+    .deposito-destaque-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 20px;
+        text-align: center;
+        border: 2px solid #f59e0b;
+    }
+    .deposito-destaque-box .titulo-grande {
+        font-size: 22px;
+        font-weight: 800;
+        color: #92400e;
+    }
+    .deposito-destaque-box .subtitulo {
+        font-size: 14px;
+        color: #78350f;
+        margin-top: 4px;
+    }
 </style>
 </head>
 <body>
@@ -936,7 +977,6 @@
                 <!-- NOVAS OPÇÕES DE DEPÓSITO -->
                 <div style="font-weight:600; color:#1e293b; margin-bottom:10px;">Selecione a conta de destino:</div>
                 <div class="deposit-options">
-                    <!-- Opção Express removida -->
                     <div class="deposit-option" data-tipo="referencia" data-valor="Entidade 10116, Referência 949097324" onclick="selecionarDeposito(this, 'Pagamento por Referência', 'Entidade 10116, Referência 949097324')">
                         <span class="icon">📄</span>
                         <div class="info">
@@ -950,11 +990,34 @@
                 <div class="input-group"><label>💰 Valor (Kz)</label><input type="number" id="depositoValor" placeholder="Ex: 10000"></div>
                 <div class="input-group"><label>📝 Código da operação</label><input type="text" id="depositoReferencia" placeholder="Código fornecido pelo ATM"></div>
 
-                <!-- Botão modificado: agora aparece como "Solicitar Depósito" -->
-                <div class="whatsapp-row">
-                    <button class="btn btn-whatsapp" onclick="solicitarDepositoWhatsApp('244949097324')">📱 Solicitar Depósito</button>
+                <!-- BOTÃO PRINCIPAL SOLICITAR DEPÓSITO com destaque -->
+                <div class="deposito-destaque-box">
+                    <div class="titulo-grande">📱 SOLICITAR DEPÓSITO</div>
+                    <div class="subtitulo">Clique abaixo para enviar os dados via WhatsApp</div>
                 </div>
-                <p style="font-size:12px;color:#64748b;text-align:center;margin-top:-5px;margin-bottom:12px;">Ao clicar, será aberto o WhatsApp com os dados preenchidos. Anexe o comprovativo e aguarde a confirmação manual.</p>
+
+                <button class="btn-solicitar-deposito" onclick="solicitarDepositoWhatsApp('244949097324')">
+                    <span class="icon">📲</span> Enviar Pedido via WhatsApp
+                </button>
+
+                <p style="font-size:12px;color:#64748b;text-align:center;margin-top:10px;margin-bottom:12px;">
+                    Ao clicar, será aberto o WhatsApp com os dados preenchidos. Anexe o comprovativo e aguarde a confirmação manual.
+                </p>
+
+                <!-- Botão de suporte secundário (alterado de "Suporte Principal" para "Atendimento KWANZAPAY") -->
+                <div style="margin-top:12px; border-top: 1px solid #e2e8f0; padding-top:16px;">
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-call" onclick="showSuporte()" style="flex:1; margin-top:0; font-size:14px;">
+                            🛡️ Atendimento KWANZAPAY
+                        </button>
+                        <button class="btn btn-outline" onclick="copiarTexto('244949097324')" style="flex:0.5; margin-top:0; font-size:14px;">
+                            📋 Copiar
+                        </button>
+                    </div>
+                    <p style="font-size:11px; color:#64748b; text-align:center; margin-top:6px;">
+                        📞 Suporte via WhatsApp: 244 949 097 324
+                    </p>
+                </div>
 
                 <div class="card-title" style="margin-top:20px; font-size:18px;">📋 Histórico de Depósitos</div>
                 <div id="historicoDepositosList" class="historico-container">
@@ -1047,7 +1110,7 @@
 
             <!-- Painel Suporte -->
             <div id="suportePanel" class="card hidden">
-                <div class="card-title">🛡️ Atendimento</div>
+                <div class="card-title">🛡️ Atendimento KWANZAPAY</div>
                 <div class="support-card">
                     <div style="text-align:center; margin-bottom:16px; font-size:16px; font-weight:600; color:#1e3a8a;">📱 Entre no nosso grupo de suporte no WhatsApp</div>
                     <div class="support-buttons">
@@ -1339,7 +1402,7 @@
                 valor: valor,
                 referencia: referencia,
                 data: new Date().toISOString(),
-                status: 'pendente', // pendente, aprovado, rejeitado
+                status: 'pendente',
                 hasComprovante: false,
                 contaDestino: selectedDepositOption.tipo,
                 contaNumero: selectedDepositOption.valor
@@ -1349,7 +1412,6 @@
             user.depositos.push(novoDeposito);
             await saveData();
 
-            // Gera o comprovativo com os dados
             const mensagem =
                 `📌 *KWANZAPAY - Pedido de Depósito*\n\n👤 Usuário: ${user.nome} (${user.phone})\n💰 Valor: ${valor.toLocaleString('pt-AO')} Kz\n🏦 Conta: ${selectedDepositOption.tipo} (${selectedDepositOption.valor})\n📝 Código: ${referencia}\n📅 Data: ${new Date().toLocaleString()}\n\n✅ *Aguardando aprovação do administrador.*`;
             const url = `https://wa.me/${numeroSuporte}?text=${encodeURIComponent(mensagem)}`;
@@ -2066,7 +2128,6 @@
         //  ADMIN - NAVEGAÇÃO
         // ============================================================
         function verificarSenhaAdmin() {
-            // Senha atualizada para o novo código
             const senha = prompt("Digite a senha de administrador:");
             if (senha === "19921992199219921993") abrirAdminPanel();
             else if (senha !== null) alert("Senha incorreta!");
@@ -2158,7 +2219,6 @@
                     lucroPorHora = Math.floor(lucro / totalHoras).toLocaleString('pt-AO') + ' Kz/h';
                 }
 
-                // Verifica se o plano já foi usado
                 const planoJaUsado = plano.unico && planosUsados.includes(index);
 
                 let badge = '';
@@ -2166,14 +2226,12 @@
                 else if (plano.dias === 60) badge = '<span class="badge-plano destaque">2 meses</span>';
                 else badge = '<span class="badge-plano">curto</span>';
 
-                // Adiciona indicação de "USO ÚNICO" para planos de 3 e 7 dias
                 let usoUnicoLabel = '';
                 if (plano.unico) {
                     usoUnicoLabel =
                         ' <span style="font-size:10px; background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:10px; display:inline-block;">🎯 Único</span>';
                 }
 
-                // Se o plano já foi usado, desabilita o botão
                 const botaoHtml = planoJaUsado ?
                     `<span style="color:#dc2626; font-weight:bold; font-size:12px;">✅ Usado</span>` :
                     `<button class="btn btn-success btn-sm" onclick="investirPlano(${index})">Investir</button>`;
@@ -2206,7 +2264,6 @@
             const user = usersDB[currentUser];
             if (!user) return;
 
-            // Verifica se o plano é de uso único e já foi usado
             if (plano.unico) {
                 if (!user.planosUnicosUsados) user.planosUnicosUsados = [];
                 if (user.planosUnicosUsados.includes(index)) {
@@ -2257,7 +2314,6 @@
                 isUnico: plano.unico || false
             });
 
-            // Marca o plano como usado se for de uso único
             if (plano.unico) {
                 if (!user.planosUnicosUsados) user.planosUnicosUsados = [];
                 if (!user.planosUnicosUsados.includes(index)) {
@@ -2312,7 +2368,6 @@
                                     </div>`;
                     }
 
-                    // Adiciona indicação de uso único
                     let unicoLabel = '';
                     if (inv.isUnico) {
                         unicoLabel =
@@ -2386,7 +2441,7 @@
 
                         const dataResgate = new Date(inv.dataResgate);
                         const dataUltimoCredito = inv.ultimoCredito ? new Date(inv.ultimoCredito) : new Date(inv
-                        .dataInicio);
+                            .dataInicio);
                         const horasPassadas = Math.floor((agora - dataUltimoCredito) / (1000 * 60 * 60));
 
                         if (inv.lucroPorHora > 0 && horasPassadas >= 1) {
