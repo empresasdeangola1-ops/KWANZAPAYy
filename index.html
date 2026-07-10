@@ -2646,6 +2646,13 @@
             if (!destino) return showErrorApp('Destino inválido');
             if (destino === currentUser) return showErrorApp('Não pode enviar para si mesmo');
             if (isNaN(valor) || valor <= 0) return showErrorApp('Valor inválido');
+            
+            // VALIDAÇÃO: valor mínimo de envio = 40000 Kz
+            if (valor < 40000) {
+                showErrorApp('O valor mínimo para transferências é de 40.000 Kz');
+                return;
+            }
+
             const userOrigem = usersDB[currentUser];
             if (valor > userOrigem.saldo) return showErrorApp('Saldo insuficiente');
             const userDestino = usersDB[destino];
